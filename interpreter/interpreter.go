@@ -1,25 +1,35 @@
 package interpreter
 
 import (
-	"fmt"
+	"log"
 	"strings"
 
+	"github.com/timtadh/lexmachine"
 	lex "github.com/timtadh/lexmachine"
 	"github.com/timtadh/lexmachine/machines"
 )
 
 var symbols []string        // Tokens que representan simbolos
 var keywords []string       // Comandos reservados para acciones
-var Tokens []string         // Todos los Tokens identificados
+var params []string         //Parametros reservados para los comandos
+var tokens []string         // Todos los Tokens identificados
 var tokenIds map[string]int // Mapa de Tokens para identificarlos
-var Lexer *lex.Lexer        // Lexer es el objeto para construir el Scanner
+var lexer *lex.Lexer        // Lexer es el objeto para construir el Scanner
+
+//Funcion para interpretar la entrada a partir del lexmachine generado
+func ScanInput(input string) *lexmachine.Scanner {
+	s, err := lexer.Scanner([]byte(strings.ToLower(input)))
+	if err != nil {
+		log.Fatal(err)
+	}
+	return s
+}
 
 func init() {
 	initTokens()
 	var err error
-	Lexer, err = initLexer()
+	lexer, err = initLexer()
 	if err != nil {
-		fmt.Println("Hay un error")
 		panic(err)
 	}
 }
@@ -32,6 +42,8 @@ func initTokens() {
 		"#",
 		"->",
 		"\\*",
+		"?",
+		"*",
 	}
 	keywords = []string{
 		/*
@@ -45,6 +57,34 @@ func initTokens() {
 		"FDISK",
 		"MOUNT",
 		"UNMOUNT",
+		"REP",
+		/*
+			Fase 2 del sistema de archivos
+		*/
+		"MKFS",
+		"LOGIN",
+		"LOGOUT",
+		"MKGRP",
+		"RMGRP",
+		"MKUSR",
+		"RMUSR",
+		"CHMOD",
+		"MKFILE",
+		"CAT",
+		"RM",
+		"EDIT",
+		"REN",
+		"MKDIR",
+		"CP",
+		"MV",
+		"FIND",
+		"CHOWN",
+		"CHGRP",
+	}
+	params = []string{
+		/*
+			Fase 1 del sistema de archivos
+		*/
 		//Parametros que reciben los comandos
 		"-SIZE",
 		"-PATH",
@@ -54,6 +94,9 @@ func initTokens() {
 		"-FIT",
 		"-DELETE",
 		"-ADD",
+		"-NOMBRE",
+		"-ID",
+		"-RUTA",
 		//Valores que puede tomar el -UNIT
 		"B",
 		"K",
@@ -69,8 +112,21 @@ func initTokens() {
 		//Valores que puede tomar el -DELETE
 		"FAST",
 		"FULL",
+		/*
+			Fase 2 del sistema de archivos
+		*/
+		"-TIPO",
+		"-USR",
+		"-PWD",
+		"-GRP",
+		"-UGO",
+		"-R",
+		"-P",
+		"-CONT",
+		"-RF",
+		"-DEST",
 	}
-	Tokens = []string{
+	tokens = []string{
 		/*
 			Fase 1 del sistema de archivos
 		*/
@@ -79,11 +135,17 @@ func initTokens() {
 		"ROUTE",
 		"NUMBER",
 		"IDN",
+		"FINISHCOMMAND",
+		/*
+			Fase 2 del sistema de archivos
+		*/
+		"FILEN",
 	}
-	Tokens = append(Tokens, keywords...)
-	Tokens = append(Tokens, symbols...)
+	tokens = append(tokens, keywords...)
+	tokens = append(tokens, params...)
+	tokens = append(tokens, symbols...)
 	tokenIds = make(map[string]int)
-	for i, tok := range Tokens {
+	for i, tok := range tokens {
 		tokenIds[tok] = i
 	}
 }
@@ -100,7 +162,9 @@ func skip(*lex.Scanner, *machines.Match) (interface{}, error) {
 
 func initLexer() (*lex.Lexer, error) {
 	lexer := lex.NewLexer()
-
+	/*
+		Fase 1 del sistema de archivos
+	*/
 	for _, lit := range symbols {
 		r := "\\" + strings.Join(strings.Split(lit, ""), "\\")
 		lexer.Add([]byte(r), token(lit))
@@ -108,16 +172,17 @@ func initLexer() (*lex.Lexer, error) {
 	for _, name := range keywords {
 		lexer.Add([]byte(strings.ToLower(name)), token(name))
 	}
-	/*
-		Fase 1 del sistema de archivos
-	*/
-	lexer.Add([]byte(`#[^\n]*`), token("COMMENT"))
+	for _, name := range params {
+		lexer.Add([]byte(strings.ToLower(name)), token(name))
+	}
+	lexer.Add([]byte(`#[^\n]*`), skip)
 	lexer.Add([]byte(`([a-z]|[A-Z]|_)([a-z]|[A-Z]|[0-9]|_|\.)*`), token("ID"))
 	lexer.Add([]byte(`"([^\\"]|(\\.))*"`), token("ROUTE"))
 	lexer.Add([]byte(`/([a-z]|[A-Z]|[0-9]|_|/|-|\.)*`), token("ROUTE"))
 	lexer.Add([]byte(`[0-9]+`), token("NUMBER"))
 	lexer.Add([]byte(`-id[0-9]+`), token("IDN"))
-	lexer.Add([]byte("( |\t|\n|\r)+"), skip)
+	lexer.Add([]byte("( |\t|\r)+"), skip)
+	lexer.Add([]byte("\n"), token("FINISHCOMMAND"))
 	err := lexer.Compile()
 	if err != nil {
 		return nil, err

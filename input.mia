@@ -27,36 +27,30 @@ fdisk -TyPE->E -path->/home/Disco2.dsk -Unit->K \*
 #Crea una partición lógica con el mejor ajuste, llamada Particion3,y
 #de 1 Mb en el Disco3 y asignación contigua
 fdisk -sizE->1 -type->L -unit->M -fit->BF \*
--path->/mis discos/Disco3.dsk -name->Particion3
+-path->"/mis discos/Disco3.dsk" -name->Particion3
 
 #Intenta crear una partición extendida dentro de Disco2 de 200 kb
 #Debería mostrar error ya que ya existe una partición extendida
 #dentro de Disco2
 fdisk -type->E -path->/home/Disco2.dsk -name->Part3 \*
-Unit->K -sizE->200
+-Unit->K -sizE->200
 
 #Elimina de forma rápida una partición llamada Particion1
-fdisk -delete->fast -name->"Particion1" -path->"/home/Disco1.dsk"
+fdisk -delete->fast -name->Particion1 -path->"/home/Disco1.dsk"
 
 #Elimina de forma completa una partición llamada Particion1
-fdisk -name->"Particion1" -delete->full -path->"/home/Disco1.dsk"
+fdisk -name->Particion1 -delete->full -path->"/home/Disco1.dsk"
 
 #Agrega 1 Mb a la partición Particion4 del Disco4.dsk
 #Se debe validar que haya espacio libre después de la partición
 fdisk -add->1 -unit->M -path->"/home/mis discos/Disco4.dsk" \*
--name->"Particion 4"
+-name->Particion 4
 
 #Monta las particiones de Disco1.dsk
 mount -path->/home/Disco1.dsk -name->Part1 #id->vda1
 mount -path->/home/Disco2.dsk -name->Part1 #id->vdb1
 mount -path->/home/Disco3.dsk -name->Part2 #id->vdc1
 mount -path->/home/Disco1.dsk -name->Part2 #id->vda2
-
-#Si se coloca el comando mount sin parametros mostrará en la consola las particiones montadas.
-id->vda1 -path->"/home/Disco1.dsk" -name->"Part1"
-id->vdb1 -path->"/home/Disco2.dsk" -name->"Part1"
-id->vdc1 -path->"/home/Disco3.dsk" -name->"Part2" 
-id->vda2 -path->"/home/Disco1.dsk" -name->"Part2"
 
 #Desmonta la partición con id vda1 (EnDisco1.dsk)
 unmount -id1->vda1
