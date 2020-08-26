@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 
@@ -24,7 +25,22 @@ func main() {
 		commands.ReadFile("disc_3.dsk")
 		commands.RMDisk("disc_2.dsk")
 	*/
-	commands.ReadFile("disc_3.dsk")
+	//commands.ReadFile("disc_3.dsk")
+	//commands.MKDisk("disc_2.dsk", 5, 'K')
+	commands.FKDisk("disc_2.dsk", 800, 'B', 'L', 'W', "LOGICA6")
+	//commands.TestDisc("disc_2.dsk")
+	fmt.Println("-------------------------------------------------------------------------")
+
+	datos, err := ioutil.ReadFile("disc_2.dsk")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(datos)
+
+}
+
+//Funcionalidad del interprete
+func interpreterF() {
 	fmt.Println("Prueba del interpreter ----------")
 	input := readMIAFile("input.mia")
 	interpreter.CommandChecker(interpreter.ScanInput(input))
