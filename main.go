@@ -19,7 +19,7 @@ import (
 
 //Funcion Main
 func main() {
-	commands.Reports("disc_2.dsk", "mbr", "png", "")
+	commands.Reports("disc_2.dsk", "disc", "png", "")
 }
 
 //Funcionalidad del interprete

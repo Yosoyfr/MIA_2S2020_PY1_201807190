@@ -3,6 +3,7 @@ package commands
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os/exec"
@@ -16,6 +17,8 @@ func Reports(path string, rep string, ext string, destiny string) {
 	switch rep {
 	case "mbr":
 		report = reportMBR(path)
+	case "disc":
+		report = reportDisc(path)
 	}
 	err := ioutil.WriteFile("report.dot", []byte(report), 0644)
 	if err != nil {
@@ -141,5 +144,92 @@ func reportMBR(path string) string {
 		}
 	}
 	dot += "}\n"
+	return dot
+}
+
+func reportDisc(path string) string {
+	//Obtenemos el mbr del disco
+	file, mbr := readFile(path)
+	//Variable que concatenara todas las sentencias en lenguaje DOT para crear el reporte con GRAPHVIZ
+	var dot string = "digraph REP_DISC{\n"
+	dot += "DISC[\nshape=box\nlabel=<\n"
+	dot += "<table border='0' cellborder='2' width='500' height=\"180\">\n"
+	dot += " \t<tr><td colspan=\"5\"><b>DISC "
+	dot += file.Name()
+	dot += "</b></td></tr>\n"
+	dot += "<tr>\n"
+	dot += "<td height='200' width='100'> MBR </td>\n"
+	//Informacion de las particiones
+	for _, part := range mbr.Partitions {
+		if part.Status != 0 {
+			//Estructura de una particion extendida
+			if part.Type == 'E' {
+				//EBR aux
+				ebr := extendedBootRecord{}
+				indexEBR := part.Start
+				dot += "<td  height='200' width='100'>\n     <table border='0'  height='200' WIDTH='100' cellborder='1'>\n"
+				dot += "<tr>  <td height='60' colspan='15'>EXTENDIDA: "
+				dot += strings.Replace(string(part.Name[:]), "\x00", "", -1)
+				dot += "</td>  </tr>\n     <tr>\n"
+				//Recorremos cada una de los ebr para agregar las particiones logicas
+				for i := 1; true; i++ {
+					file.Seek(indexEBR, 0)
+					//Se obtiene la data del archivo binario
+					data := readNextBytes(file, int64(binary.Size(ebr)))
+					buffer := bytes.NewBuffer(data)
+					err := binary.Read(buffer, binary.BigEndian, &ebr)
+					if err != nil {
+						log.Fatal("binary.Read failed", err)
+					}
+					//Porcentaje que ocupa esta particion logica
+					percentage := float64(ebr.Size) * 100 / float64(mbr.Size)
+					//Informacion de los EBR's
+					if percentage != 0 {
+						if ebr.Status != 0 {
+							dot += "<td height='200' width='75'>EBR</td>\n"
+							dot += "     <td height='200' width='150'>LOGICA<br/>"
+							dot += strings.Replace(string(ebr.Name[:]), "\x00", "", -1)
+							dot += "<br/> Porcentaje: "
+							dot += fmt.Sprintf("%f", percentage)
+							dot += "%</td>\n"
+						} else {
+							dot += "      <td height='200' width='150'>LIBRE <br/> Porcentaje: "
+							dot += fmt.Sprintf("%f", percentage)
+							dot += "%</td>\n"
+						}
+					}
+					if ebr.Next == -1 {
+						//Porcentaje libre luego de encontrar la ultima logica
+						freeExtended := float64(part.Start + part.Size - (ebr.Start - int64(binary.Size(ebr))) - ebr.Size)
+						percentage := freeExtended * 100 / float64(mbr.Size)
+						if percentage != 0 {
+							dot += " <td height='200' width='150'>LIBRE <br/> Porcentaje: "
+							dot += fmt.Sprintf("%f", percentage)
+							dot += "% </td>\n"
+						}
+						break
+					}
+					indexEBR = ebr.Next
+				}
+				dot += "     </tr>\n     </table>\n     </td>\n"
+			} else { //Particiones Primarias
+				dot += "<td height='200' width='200'>PRIMARIA <br/> "
+				dot += strings.Replace(string(part.Name[:]), "\x00", "", -1)
+				dot += "<br/> Utilizado: "
+				//Porcentaje que ocupa esta particion primaria
+				percentage := float64(part.Size) * 100 / float64(mbr.Size)
+				dot += fmt.Sprintf("%f", percentage)
+				dot += "%</td>\n"
+			}
+		} else { //Si la particion esta libre
+			dot += "<td height='200' width='200'>LIBRE <br/> Utilizado: "
+			//Porcentaje que ocupa esta particion primaria
+			percentage := float64(part.Size) * 100 / float64(mbr.Size)
+			dot += fmt.Sprintf("%f", percentage)
+			dot += "%</td>\n"
+		}
+
+	}
+	dot += "</tr> \n     </table>        \n>];\n\n}"
 	return dot
 }
