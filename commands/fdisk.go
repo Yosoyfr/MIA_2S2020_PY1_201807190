@@ -207,7 +207,6 @@ func FKDisk(path string, size int64, unit byte, typeF byte, fit byte, name strin
 			binary.Write(&binaryNextEBR, binary.BigEndian, &nextEBR)
 			writeNextBytes(file, binaryNextEBR.Bytes())
 		}
-
 		return
 	}
 	//[VALIDACION 1]

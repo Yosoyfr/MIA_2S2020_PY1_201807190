@@ -19,24 +19,7 @@ import (
 
 //Funcion Main
 func main() {
-	/*
-		fmt.Println("Prueba de creacion de un disco ----------")
-		commands.MKDisk("disc_3.dsk", 25, 1)
-		commands.ReadFile("disc_3.dsk")
-		commands.RMDisk("disc_2.dsk")
-	*/
-	//commands.ReadFile("disc_3.dsk")
-	//commands.MKDisk("disc_2.dsk", 5, 'K')
-	commands.FKDisk("disc_2.dsk", 800, 'B', 'L', 'W', "LOGICA6")
-	//commands.TestDisc("disc_2.dsk")
-	fmt.Println("-------------------------------------------------------------------------")
-
-	datos, err := ioutil.ReadFile("disc_2.dsk")
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(datos)
-
+	commands.Reports("disc_2.dsk", "mbr", "png", "")
 }
 
 //Funcionalidad del interprete
@@ -44,6 +27,17 @@ func interpreterF() {
 	fmt.Println("Prueba del interpreter ----------")
 	input := readMIAFile("input.mia")
 	interpreter.CommandChecker(interpreter.ScanInput(input))
+}
+
+func commandsTest() {
+	//commands.ReadFile("disc_3.dsk")
+	//commands.MKDisk("disc_2.dsk", 5, 'K')
+	commands.FKDisk("disc_2.dsk", 200, 'B', 'L', 'W', "LOGICA6")
+	datos, err := ioutil.ReadFile("disc_2.dsk")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(datos)
 }
 
 //Funcion para leer los archivos con extension ".mia"
