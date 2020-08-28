@@ -2,18 +2,24 @@ package interpreter
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
+	/*
+		Imports para los comandos de consola
+	*/
+	commands "../commands"
 	"github.com/timtadh/lexmachine"
 )
 
 //Posibles parametros
 type param struct {
-	size      string
+	size      int64
 	path      string
 	name      string
-	unit      string
-	Type      string
-	fit       string
+	unit      byte
+	Type      byte
+	fit       byte
 	delete    string
 	add       string
 	idn       []string
@@ -25,7 +31,7 @@ func CommandChecker(s *lexmachine.Scanner) {
 	paramType := ""
 	var paramError error
 	concat := false
-	aux := param{unit: "K"}
+	aux := param{unit: 'K'}
 
 	for tok, err, eof := s.Next(); !eof; tok, err, eof = s.Next() {
 		//Si existe un error lexico termina la lectura de la lista de tokens
@@ -44,6 +50,7 @@ func CommandChecker(s *lexmachine.Scanner) {
 			FDISK
 			MOUNT
 			UNMOUNT
+			REP
 		*/
 		for _, value := range keywords {
 			if tokens[token.Type] == value {
@@ -87,9 +94,8 @@ func CommandChecker(s *lexmachine.Scanner) {
 		}
 		//Se ejecuta el comando
 		if tokens[token.Type] == "FINISHCOMMAND" && !concat && aux.paramType != "" {
-			fmt.Println("Se ejecuta comando", "----------------------------------------")
-			fmt.Println(aux)
-			aux = param{unit: "K"}
+			controlCommands(aux)
+			aux = param{unit: 'K'}
 		}
 		//Reseteamos la concatenacion
 		if tokens[token.Type] == "FINISHCOMMAND" {
@@ -112,9 +118,9 @@ func paramDesigned(parameter *lexmachine.Token, paramType string, aux param) (pa
 			fmt.Println("Error: No es una ruta valida")
 			return aux, fmt.Errorf("Error")
 		}
-		aux.path = string(parameter.Lexeme)
+		aux.path = strings.Replace(string(parameter.Lexeme), "\"", "", -1)
 	} else if paramType == "SIZE" {
-		if aux.size != "" {
+		if aux.size != 0 {
 			fmt.Println("Error: Ya existe un SIZE asignado")
 			return aux, fmt.Errorf("Error")
 		}
@@ -122,7 +128,7 @@ func paramDesigned(parameter *lexmachine.Token, paramType string, aux param) (pa
 			fmt.Println("Error: No es un numero valido")
 			return aux, fmt.Errorf("Error")
 		}
-		aux.size = string(parameter.Lexeme)
+		aux.size, _ = strconv.ParseInt(string(parameter.Lexeme), 10, 64)
 	} else if paramType == "NAME" {
 		if aux.name != "" {
 			fmt.Println("Error: Ya existe un NAME asignado", string(parameter.Lexeme))
@@ -134,19 +140,20 @@ func paramDesigned(parameter *lexmachine.Token, paramType string, aux param) (pa
 		}
 		aux.name = string(parameter.Lexeme)
 	} else if paramType == "UNIT" {
-		aux.unit = tokens[parameter.Type]
+
+		aux.unit = tokens[parameter.Type][0]
 	} else if paramType == "TYPE" {
-		if aux.Type != "" {
+		if aux.Type != 0 {
 			fmt.Println("Error: Ya existe un TYPE asignado")
 			return aux, fmt.Errorf("Error")
 		}
-		aux.Type = tokens[parameter.Type]
+		aux.Type = tokens[parameter.Type][0]
 	} else if paramType == "FIT" {
-		if aux.fit != "" {
+		if aux.fit != 0 {
 			fmt.Println("Error: Ya existe un FIT asignado")
 			return aux, fmt.Errorf("Error")
 		}
-		aux.fit = tokens[parameter.Type]
+		aux.fit = tokens[parameter.Type][0]
 	} else if paramType == "DELETE" {
 		if aux.delete != "" {
 			fmt.Println("Error: Ya existe un DELETE asignado")
@@ -172,4 +179,27 @@ func paramDesigned(parameter *lexmachine.Token, paramType string, aux param) (pa
 	}
 
 	return aux, nil
+}
+
+func controlCommands(command param) {
+	if command.Type == 0 {
+		command.Type = 'P'
+	}
+	if command.fit == 0 {
+		command.fit = 'W'
+	}
+	if command.unit == 0 {
+		command.unit = 'K'
+	}
+	fmt.Println(command)
+	switch command.paramType {
+	case "EXEC":
+		fmt.Println("Hara el exec")
+	case "MKDISK":
+		commands.MKDisk(command.path, command.name, command.size, command.unit)
+	case "RMDISK":
+		commands.RMDisk(command.path)
+	case "FDISK":
+		commands.FKDisk(command.path, command.size, command.unit, command.Type, command.fit, command.name)
+	}
 }

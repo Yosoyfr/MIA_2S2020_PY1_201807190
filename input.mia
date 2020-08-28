@@ -21,19 +21,19 @@ Fdisk -sizE->72 -path->/home/Disco1.dsk -name->Particion1
 
 #Crea una partición extendida dentro de Disco2 de 56 kb
 #Tiene el peor ajuste y asignación Enlazada
-fdisk -TyPE->E -path->/home/Disco2.dsk -Unit->K \*
+fdisk -TyPE->E -path->/home/Disco2.dsk -Unit->B \*
 -name->Particion2 -sizE->56
 
 #Crea una partición lógica con el mejor ajuste, llamada Particion3,y
 #de 1 Mb en el Disco3 y asignación contigua
-fdisk -sizE->1 -type->L -unit->M -fit->BF \*
+fdisk -sizE->1 -type->L -unit->M -fit->WF \*
 -path->"/mis discos/Disco3.dsk" -name->Particion3
 
 #Intenta crear una partición extendida dentro de Disco2 de 200 kb
 #Debería mostrar error ya que ya existe una partición extendida
 #dentro de Disco2
 fdisk -type->E -path->/home/Disco2.dsk -name->Part3 \*
--Unit->K -sizE->200
+-Unit->M -sizE->200
 
 #Elimina de forma rápida una partición llamada Particion1
 fdisk -delete->fast -name->Particion1 -path->"/home/Disco1.dsk"

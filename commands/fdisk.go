@@ -245,7 +245,6 @@ func FKDisk(path string, size int64, unit byte, typeF byte, fit byte, name strin
 	}
 	//Se la asignamos al mbr
 	mbr.Partitions[index] = newPartition
-	fmt.Println(mbr, int64(binary.Size(mbr)))
 	//Escribimos de nuevo el mbr
 	file.Seek(0, 0)
 	//Empezamos el proceso de guardar en binario la data en memoria del struct MBR
@@ -254,7 +253,7 @@ func FKDisk(path string, size int64, unit byte, typeF byte, fit byte, name strin
 	writeNextBytes(file, binaryMBR.Bytes())
 	//[EXTENDIDA] Se crea el EBR incial
 	if typeF == 'E' {
-		ebr := extendedBootRecord{Next: -1, Fit: 'W'}
+		ebr := extendedBootRecord{Next: -1, Start: newPartition.Start + 42}
 		file.Seek(newPartition.Start, 0)
 		//Empezamos el proceso de guardar la data del struct EBR
 		var binaryEBR bytes.Buffer

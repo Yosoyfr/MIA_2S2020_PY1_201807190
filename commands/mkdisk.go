@@ -39,7 +39,7 @@ func createBinaryFile(name string, size int64, unit byte) (file *os.File, newSiz
 }
 
 //Funcion para crear el disco a partir de un comando MKDISK
-func MKDisk(name string, size int64, unit byte) {
+func MKDisk(path string, name string, size int64, unit byte) {
 	//Se crea el archivo binario que emula el disco
 	file, newSize := createBinaryFile(name, size, unit)
 	defer file.Close()

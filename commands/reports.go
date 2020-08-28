@@ -164,15 +164,14 @@ func reportDisc(path string) string {
 		if part.Status != 0 {
 			//Estructura de una particion extendida
 			if part.Type == 'E' {
+				nLogics := 0
+				dotAux := ""
 				//EBR aux
 				ebr := extendedBootRecord{}
 				indexEBR := part.Start
-				dot += "<td  height='200' width='100'>\n     <table border='0'  height='200' WIDTH='100' cellborder='1'>\n"
-				dot += "<tr>  <td height='60' colspan='15'>EXTENDIDA: "
-				dot += strings.Replace(string(part.Name[:]), "\x00", "", -1)
-				dot += "</td>  </tr>\n     <tr>\n"
 				//Recorremos cada una de los ebr para agregar las particiones logicas
 				for i := 1; true; i++ {
+					nLogics = i
 					file.Seek(indexEBR, 0)
 					//Se obtiene la data del archivo binario
 					data := readNextBytes(file, int64(binary.Size(ebr)))
@@ -186,16 +185,16 @@ func reportDisc(path string) string {
 					//Informacion de los EBR's
 					if percentage != 0 {
 						if ebr.Status != 0 {
-							dot += "<td height='200' width='75'>EBR</td>\n"
-							dot += "     <td height='200' width='150'>LOGICA<br/>"
-							dot += strings.Replace(string(ebr.Name[:]), "\x00", "", -1)
-							dot += "<br/> Porcentaje: "
-							dot += fmt.Sprintf("%f", percentage)
-							dot += "%</td>\n"
+							dotAux += "<td height='200' width='75'>EBR</td>\n"
+							dotAux += "     <td height='200' width='150'>LOGICA<br/>"
+							dotAux += strings.Replace(string(ebr.Name[:]), "\x00", "", -1)
+							dotAux += "<br/> Porcentaje: "
+							dotAux += fmt.Sprintf("%f", percentage)
+							dotAux += "%</td>\n"
 						} else {
-							dot += "      <td height='200' width='150'>LIBRE <br/> Porcentaje: "
-							dot += fmt.Sprintf("%f", percentage)
-							dot += "%</td>\n"
+							dotAux += "      <td height='200' width='150'>LIBRE <br/> Porcentaje: "
+							dotAux += fmt.Sprintf("%f", percentage)
+							dotAux += "%</td>\n"
 						}
 					}
 					if ebr.Next == -1 {
@@ -203,15 +202,26 @@ func reportDisc(path string) string {
 						freeExtended := float64(part.Start + part.Size - (ebr.Start - int64(binary.Size(ebr))) - ebr.Size)
 						percentage := freeExtended * 100 / float64(mbr.Size)
 						if percentage != 0 {
-							dot += " <td height='200' width='150'>LIBRE <br/> Porcentaje: "
-							dot += fmt.Sprintf("%f", percentage)
-							dot += "% </td>\n"
+							dotAux += " <td height='200' width='150'>LIBRE <br/> Porcentaje: "
+							dotAux += fmt.Sprintf("%f", percentage)
+							dotAux += "% </td>\n"
+						}
+						if i == 1 {
+							nLogics = 0
 						}
 						break
 					}
 					indexEBR = ebr.Next
 				}
-				dot += "     </tr>\n     </table>\n     </td>\n"
+				dotAux += "     </tr>\n     </table>\n     </td>\n"
+				//Encabezado de la extendida
+				dot += "<td  height='200' width='100'>\n     <table border='0'  height='200' WIDTH='100' cellborder='1'>\n"
+				dot += "<tr>  <td height='60' colspan='"
+				dot += strconv.Itoa(nLogics*2 + 1)
+				dot += "'>EXTENDIDA: "
+				dot += strings.Replace(string(part.Name[:]), "\x00", "", -1)
+				dot += "</td>  </tr>\n     <tr>\n"
+				dot += dotAux
 			} else { //Particiones Primarias
 				dot += "<td height='200' width='200'>PRIMARIA <br/> "
 				dot += strings.Replace(string(part.Name[:]), "\x00", "", -1)

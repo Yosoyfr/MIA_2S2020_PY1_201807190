@@ -19,13 +19,15 @@ import (
 
 //Funcion Main
 func main() {
-	commands.Reports("disc_2.dsk", "disc", "png", "")
+	interpreterF()
+	commands.Reports("disc_2.dsk", "mbr", "png", "")
+	//interpreterF()
 }
 
 //Funcionalidad del interprete
 func interpreterF() {
 	fmt.Println("Prueba del interpreter ----------")
-	input := readMIAFile("input.mia")
+	input := readMIAFile("ht.mia")
 	interpreter.CommandChecker(interpreter.ScanInput(input))
 }
 
