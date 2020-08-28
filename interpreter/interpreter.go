@@ -18,7 +18,7 @@ var lexer *lex.Lexer        // Lexer es el objeto para construir el Scanner
 
 //Funcion para interpretar la entrada a partir del lexmachine generado
 func ScanInput(input string) *lexmachine.Scanner {
-	s, err := lexer.Scanner([]byte(strings.ToLower(input)))
+	s, err := lexer.Scanner([]byte(input))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -81,51 +81,6 @@ func initTokens() {
 		"CHOWN",
 		"CHGRP",
 	}
-	params = []string{
-		/*
-			Fase 1 del sistema de archivos
-		*/
-		//Parametros que reciben los comandos
-		"-SIZE",
-		"-PATH",
-		"-NAME",
-		"-UNIT",
-		"-TYPE",
-		"-FIT",
-		"-DELETE",
-		"-ADD",
-		"-NOMBRE",
-		"-ID",
-		"-RUTA",
-		//Valores que puede tomar el -UNIT
-		"B",
-		"K",
-		"M",
-		//Valores que puede tomar el -TYPE
-		"P",
-		"E",
-		"L",
-		//Valores que puede tomar el -FIT
-		"BF",
-		"FF",
-		"WF",
-		//Valores que puede tomar el -DELETE
-		"FAST",
-		"FULL",
-		/*
-			Fase 2 del sistema de archivos
-		*/
-		"-TIPO",
-		"-USR",
-		"-PWD",
-		"-GRP",
-		"-UGO",
-		"-R",
-		"-P",
-		"-CONT",
-		"-RF",
-		"-DEST",
-	}
 	tokens = []string{
 		/*
 			Fase 1 del sistema de archivos
@@ -133,6 +88,7 @@ func initTokens() {
 		"COMMENT",
 		"ID",
 		"ROUTE",
+		"PARAMETER",
 		"NUMBER",
 		"IDN",
 		"FINISHCOMMAND",
@@ -180,6 +136,7 @@ func initLexer() (*lex.Lexer, error) {
 	lexer.Add([]byte(`"([^\\"]|(\\.))*"`), token("ROUTE"))
 	lexer.Add([]byte(`/([a-z]|[A-Z]|[0-9]|_|/|-|\.)*`), token("ROUTE"))
 	lexer.Add([]byte(`[0-9]+`), token("NUMBER"))
+	lexer.Add([]byte(`-([a-z]|[A-Z])+`), token("PARAMETER"))
 	lexer.Add([]byte(`-id[0-9]+`), token("IDN"))
 	lexer.Add([]byte("( |\t|\r)+"), skip)
 	lexer.Add([]byte("\n"), token("FINISHCOMMAND"))

@@ -31,7 +31,7 @@ func CommandChecker(s *lexmachine.Scanner) {
 	paramType := ""
 	var paramError error
 	concat := false
-	aux := param{unit: 'K'}
+	aux := param{}
 
 	for tok, err, eof := s.Next(); !eof; tok, err, eof = s.Next() {
 		//Si existe un error lexico termina la lectura de la lista de tokens
@@ -53,41 +53,25 @@ func CommandChecker(s *lexmachine.Scanner) {
 			REP
 		*/
 		for _, value := range keywords {
-			if tokens[token.Type] == value {
+			if strings.EqualFold(string(token.Lexeme), value) {
 				aux.paramType = value
 			}
 		}
-
 		//Verificamos si viene algun parametro para asignarlo
-		switch tokens[token.Type] {
-		case "-PATH":
-			paramType = "PATH"
-		case "-SIZE":
-			paramType = "SIZE"
-		case "-NAME":
-			paramType = "NAME"
-		case "-UNIT":
-			paramType = "UNIT"
-		case "-TYPE":
-			paramType = "TYPE"
-		case "-FIT":
-			paramType = "FIT"
-		case "-DELETE":
-			paramType = "DELETE"
-		case "-ADD":
-			paramType = "ADD"
-		case "IDN":
-			paramType = "IDN"
-		case "->":
+		if tokens[token.Type] == "PARAMETER" {
+			paramType = string(token.Lexeme)
+			paramType = strings.Replace(paramType, "-", "", -1)
+			paramType = strings.ToUpper(paramType)
+		}
+		//Se asigna el parametro a la estructura del comando
+		if tokens[token.Type] == "->" {
 			tokenAux, _, _ := s.Next()
 			aux, paramError = paramDesigned(tokenAux.(*lexmachine.Token), paramType, aux)
 		}
-
 		//Verificamos si no existe un error en la asignacion
 		if paramError != nil {
 			break
 		}
-
 		//Concatenamos la siguiente fila
 		if tokens[token.Type] == "\\*" {
 			concat = true
@@ -140,26 +124,25 @@ func paramDesigned(parameter *lexmachine.Token, paramType string, aux param) (pa
 		}
 		aux.name = string(parameter.Lexeme)
 	} else if paramType == "UNIT" {
-
-		aux.unit = tokens[parameter.Type][0]
+		aux.unit = parameter.Lexeme[0]
 	} else if paramType == "TYPE" {
 		if aux.Type != 0 {
 			fmt.Println("Error: Ya existe un TYPE asignado")
 			return aux, fmt.Errorf("Error")
 		}
-		aux.Type = tokens[parameter.Type][0]
+		aux.Type = parameter.Lexeme[0]
 	} else if paramType == "FIT" {
 		if aux.fit != 0 {
 			fmt.Println("Error: Ya existe un FIT asignado")
 			return aux, fmt.Errorf("Error")
 		}
-		aux.fit = tokens[parameter.Type][0]
+		aux.fit = parameter.Lexeme[0]
 	} else if paramType == "DELETE" {
 		if aux.delete != "" {
 			fmt.Println("Error: Ya existe un DELETE asignado")
 			return aux, fmt.Errorf("Error")
 		}
-		aux.delete = tokens[parameter.Type]
+		aux.delete = string(parameter.Lexeme)
 	} else if paramType == "ADD" {
 		if aux.add != "" {
 			fmt.Println("Error: Ya existe un ADD asignado")
@@ -191,7 +174,8 @@ func controlCommands(command param) {
 	if command.unit == 0 {
 		command.unit = 'K'
 	}
-	fmt.Println(command)
+	//fmt.Println(command)
+	//Ejecutamos el tipo de comando que llega
 	switch command.paramType {
 	case "EXEC":
 		fmt.Println("Hara el exec")

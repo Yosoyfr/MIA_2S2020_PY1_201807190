@@ -20,7 +20,7 @@ import (
 //Funcion Main
 func main() {
 	interpreterF()
-	commands.Reports("disc_2.dsk", "mbr", "png", "")
+	commands.Reports("Hoja1_carnet.dsk", "mbr", "png", "")
 	//interpreterF()
 }
 
