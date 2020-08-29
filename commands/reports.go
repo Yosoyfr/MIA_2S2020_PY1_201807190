@@ -18,7 +18,7 @@ func Reports(path string, rep string, ext string, destiny string) {
 	case "mbr":
 		report = reportMBR(path)
 	case "disc":
-		report = reportDisc(path)
+		report = reportDisk(path)
 	}
 	err := ioutil.WriteFile("report.dot", []byte(report), 0644)
 	if err != nil {
@@ -150,17 +150,17 @@ func reportMBR(path string) string {
 	return dot
 }
 
-func reportDisc(path string) string {
+func reportDisk(path string) string {
 	//Obtenemos el mbr del disco
 	file, mbr, err := readFile(path)
 	if err != nil {
 		return ""
 	}
 	//Variable que concatenara todas las sentencias en lenguaje DOT para crear el reporte con GRAPHVIZ
-	var dot string = "digraph REP_DISC{\n"
+	var dot string = "digraph REP_DISK{\n"
 	dot += "DISC[\nshape=box\nlabel=<\n"
 	dot += "<table border='0' cellborder='2' width='500' height=\"180\">\n"
-	dot += " \t<tr><td colspan=\"5\"><b>DISC "
+	dot += " \t<tr><td colspan=\"5\"><b>DISK "
 	dot += file.Name()
 	dot += "</b></td></tr>\n"
 	dot += "<tr>\n"

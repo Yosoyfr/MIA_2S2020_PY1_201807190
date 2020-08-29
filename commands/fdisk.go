@@ -29,11 +29,11 @@ type partition struct {
 }
 
 //Funcion para leer el archivo binario que representa el disco
-func readFile(disc string) (*os.File, masterBootRecord, error) {
+func readFile(disk string) (*os.File, masterBootRecord, error) {
 	//Se instancia un struct de mbr
 	mbr := masterBootRecord{}
 	//Se abre el archivo
-	file, err := os.OpenFile(disc, os.O_RDWR, 0777)
+	file, err := os.OpenFile(disk, os.O_RDWR, 0777)
 	if err != nil {
 		fmt.Println("Error: El sistema no puede encontrar el archivo especificado.")
 		return nil, mbr, fmt.Errorf("ERROR")
@@ -158,9 +158,9 @@ func FKDisk(path string, size int64, unit byte, typeF byte, fit byte, name strin
 			prevEBR.Start = index + int64(binary.Size(prevEBR))
 			//Empezamos el proceso de guardar la data del struct EBR
 			file.Seek(index, 0)
-			var binaryDisc bytes.Buffer
-			binary.Write(&binaryDisc, binary.BigEndian, &prevEBR)
-			writeNextBytes(file, binaryDisc.Bytes())
+			var binaryDisk bytes.Buffer
+			binary.Write(&binaryDisk, binary.BigEndian, &prevEBR)
+			writeNextBytes(file, binaryDisk.Bytes())
 
 		} else {
 			//Buscamos el ultimo insertado para editarlo

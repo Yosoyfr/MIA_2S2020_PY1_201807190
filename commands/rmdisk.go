@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"log"
 	"os"
 )
 
@@ -15,7 +14,8 @@ func RMDisk(path string) {
 	if input == 1 {
 		err := os.Remove(path)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println("Error: El sistema no puede encontrar el archivo especificado.")
+			return
 		}
 		fmt.Println("Disco Eliminado con exito!!")
 	} else {

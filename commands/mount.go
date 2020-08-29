@@ -9,15 +9,8 @@ import (
 )
 
 //Estructura de un objeto mount que representara la particon montada Primaria
-type primaryOrExtedendedPart struct {
-	partition partition
-	number    int
-	id        string
-}
-
-//Estructura de un objeto mount que representara la particon montada Logica
-type logicPart struct {
-	partition extendedBootRecord
+type mountedParts struct {
+	partition interface{}
 	number    int
 	id        string
 }
@@ -26,12 +19,11 @@ type logicPart struct {
 type mounted struct {
 	path   string
 	letter byte
-	parts  []primaryOrExtedendedPart
-	logics []logicPart
+	parts  []mountedParts
 }
 
 //Lista de los discos que han sido montados con sus respectivos
-var discsMounted []mounted
+var mountedDisks []mounted
 
 //Funcion Mount, añade particiones que fueron montadas por el comando
 func Mount(path string, name string) {
@@ -44,41 +36,36 @@ func Mount(path string, name string) {
 	//Indice de la particion encontrada
 	index := -1
 	//Letra que se asigna por disco
-	var discLetter byte = 'a'
+	var diskLetter byte = 'a'
 	//Disco montando anteriormente para usarlo temporalmente
-	disc := mounted{}
+	disk := mounted{}
 	//Buscamos en la lista de discos que fueron montados
-	for i, discs := range discsMounted {
-		if path == discs.path {
+	for i, disks := range mountedDisks {
+		if path == disks.path {
 			//Se encontro el disco que alguna vez fue montado
-			discLetter = discs.letter
-			disc = discs
-			index = i
+			diskLetter, disk, index = disks.letter, disks, i
 			break
 		}
-		discLetter = byte(int(discLetter) + 1)
+		diskLetter = byte(int(diskLetter) + 1)
 	}
 	//	Obtenemos el nombre a asignar
 	var realName [16]byte
 	copy(realName[:], name)
 	//Verificamos que no haya sido montada esta particion
-	if existPart(disc, realName) {
+	if existPart(disk, realName) {
 		fmt.Println("Alert: Esta particion ya ha sido montada")
 		return
 	}
 	//Variable que almacena el estado si se encontro o no la particion
-	findPart := fmt.Errorf("NOT FOUND")
-	findEBR := fmt.Errorf("NOT FOUND")
+	findPart, findEBR := fmt.Errorf("NOT FOUND"), fmt.Errorf("NOT FOUND")
 	//Variable que almacena temporalmente la particion encontrada
 	partition := partition{}
 	ebr := extendedBootRecord{}
 	//Recorremos la lista de particiones del MBR
-	//fmt.Println(string(discLetter))
 	for _, part := range mbr.Partitions {
 		if part.Name == realName {
 			//Se encontro la particion
-			findPart = nil
-			partition = part
+			findPart, partition = nil, part
 			break
 		}
 		//Buscamos en las particiones logicas
@@ -113,44 +100,84 @@ func Mount(path string, name string) {
 		return
 	}
 	//Si el disco no ha sido montado lo montamos
-	if disc.path == "" {
-		//fmt.Println("No ha sido montado")
-		disc.letter = discLetter
-		disc.path = path
+	if disk.path == "" {
+		disk.letter, disk.path = diskLetter, path
 	}
+	//Creamos la nueva particion a montar
+	part := mountedParts{}
 	//En dado caso vamos a montar una particion logica
 	if findEBR == nil {
-		part := logicPart{partition: ebr}
-		if len(disc.logics) == 0 {
-			part.number = 1
-		} else {
-			part.number = disc.logics[len(disc.logics)-1].number + 1
-		}
-		part.id = "vd" + string(disc.letter) + strconv.Itoa(part.number)
-		disc.logics = append(disc.logics, part)
+		part.partition = ebr
 	} else {
-		fmt.Println(partition, ebr)
+		part.partition = partition
 	}
+	if len(disk.parts) == 0 {
+		part.number = 1
+	} else {
+		part.number = disk.parts[len(disk.parts)-1].number + 1
+	}
+	part.id = "vd" + string(disk.letter) + strconv.Itoa(part.number)
+	//La montamos al disco
+	disk.parts = append(disk.parts, part)
+	//Montamos el disco a la lista de discos montados
 	if index == -1 {
-		discsMounted = append(discsMounted, disc)
+		mountedDisks = append(mountedDisks, disk)
 	} else {
-		discsMounted[index] = disc
+		mountedDisks[index] = disk
 	}
-	fmt.Println(discsMounted)
 }
 
-func existPart(disc mounted, name [16]byte) bool {
+func existPart(disk mounted, name [16]byte) bool {
 	//Revisamos si no existe en las primarias o extendidas
-	for _, part := range disc.parts {
-		if part.partition.Name == name {
-			return true
-		}
-	}
-	//Revisamos si no existe en las logicas
-	for _, part := range disc.logics {
-		if part.partition.Name == name {
-			return true
+	for _, part := range disk.parts {
+		typePart := typeOf(part.partition)
+		switch typePart {
+		case 0:
+			aux := part.partition.(partition)
+			if aux.Name == name {
+				return true
+			}
+		case 1:
+			aux := part.partition.(extendedBootRecord)
+			if aux.Name == name {
+				return true
+			}
 		}
 	}
 	return false
+}
+
+func typeOf(x interface{}) int {
+	// type switch
+	switch x.(type) {
+	case partition:
+		return 0
+	case extendedBootRecord:
+		return 1
+	default:
+		fmt.Println("Error: No se encontro el tipo de particion")
+		return -1
+	}
+}
+
+//Funcion para mostrar todos las particiones montadas en el sistema
+func ShowMountedDisks() {
+	fmt.Println("Particiones montadas:")
+	//Recorremos la lista de discos montados
+	for _, disk := range mountedDisks {
+		//Path del disco temporal
+		path := disk.path
+		//Recorremos las particiones de ese disco que han sido montadas
+		for _, part := range disk.parts {
+			typePart := typeOf(part.partition)
+			switch typePart {
+			case 0:
+				aux := part.partition.(partition)
+				fmt.Printf("id->%s -path->\"%s\" -name->\"%s\"\n", part.id, path, aux.Name)
+			case 1:
+				aux := part.partition.(extendedBootRecord)
+				fmt.Printf("id->%s -path->\"%s\" -name->\"%s\"\n", part.id, path, aux.Name)
+			}
+		}
+	}
 }

@@ -1,4 +1,4 @@
-Mkdisk -size->5 -path->"C:\Users\Francisco Suarez\Documents\GitHub" \*
+Mkdisk -size->5 -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190" \*
 -name->Hoja2_carnet.dsk -uniT->M
 
 Fdisk -sizE->20 -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja2_carnet.dsk" -name->Part1

@@ -40,8 +40,11 @@ func createBinaryFile(name string, size int64, unit byte) (file *os.File, newSiz
 
 //Funcion para crear el disco a partir de un comando MKDISK
 func MKDisk(path string, name string, size int64, unit byte) {
+	//Se verifica si existe el directorio o si no se crea
+	createDirectory(path)
+	path = path + "\\" + name
 	//Se crea el archivo binario que emula el disco
-	file, newSize := createBinaryFile(name, size, unit)
+	file, newSize := createBinaryFile(path, size, unit)
 	defer file.Close()
 	//Al no generar errores en la creacion del archivo binario que emulara el disco, empezamos agregar las respectivas estructuras
 	mbr := masterBootRecord{Size: newSize,
@@ -71,4 +74,16 @@ func writeNextBytes(file *os.File, bytes []byte) {
 func GetAttributes(mbr masterBootRecord) {
 	//fmt.Println(mbr)
 	fmt.Printf("Tamaño: %d\nFecha de creacion: %s\nSignature: %d\n", mbr.Size, mbr.CreatedAt, mbr.DiskSignature)
+}
+
+//Funcion para crear directorio si es que no existe
+func createDirectory(path string) {
+	_, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		err := os.MkdirAll(path, 0755)
+		if err != nil {
+			fmt.Println("Error: El sistema no puedo crear el directorio")
+			return
+		}
+	}
 }
