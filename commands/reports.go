@@ -33,7 +33,10 @@ func Reports(path string, rep string, ext string, destiny string) {
 
 func reportMBR(path string) string {
 	//Obtenemos el mbr del disco
-	file, mbr := readFile(path)
+	file, mbr, err := readFile(path)
+	if err != nil {
+		return ""
+	}
 	//Variable que concatenara todas las sentencias en lenguaje DOT para crear el reporte con GRAPHVIZ
 	var dot string = "digraph REP_MBR{\n"
 	//Variable que almacenara temporalmente la posicion de la particion extendida
@@ -149,7 +152,10 @@ func reportMBR(path string) string {
 
 func reportDisc(path string) string {
 	//Obtenemos el mbr del disco
-	file, mbr := readFile(path)
+	file, mbr, err := readFile(path)
+	if err != nil {
+		return ""
+	}
 	//Variable que concatenara todas las sentencias en lenguaje DOT para crear el reporte con GRAPHVIZ
 	var dot string = "digraph REP_DISC{\n"
 	dot += "DISC[\nshape=box\nlabel=<\n"
@@ -206,7 +212,7 @@ func reportDisc(path string) string {
 							dotAux += fmt.Sprintf("%f", percentage)
 							dotAux += "% </td>\n"
 						}
-						if i == 1 {
+						if i == 1 && ebr.Status == 0 {
 							nLogics = 0
 						}
 						break

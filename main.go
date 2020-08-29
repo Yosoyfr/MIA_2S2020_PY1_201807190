@@ -20,8 +20,10 @@ import (
 //Funcion Main
 func main() {
 	interpreterF()
-	commands.Reports("Hoja1_carnet.dsk", "mbr", "png", "")
-	//interpreterF()
+	//commands.Reports("Hoja1_carnet.dsk", "disc", "png", "")
+	commands.Mount("Hoja1_carnet.dsk", "Logic1")
+	commands.Mount("Hoja2_carnet3.dsk", "Logic1")
+	commands.Mount("Hoja1_carnet.dsk", "Logic1")
 }
 
 //Funcionalidad del interprete

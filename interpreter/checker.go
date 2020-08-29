@@ -9,6 +9,7 @@ import (
 		Imports para los comandos de consola
 	*/
 	commands "../commands"
+
 	"github.com/timtadh/lexmachine"
 )
 
@@ -65,7 +66,12 @@ func CommandChecker(s *lexmachine.Scanner) {
 		}
 		//Se asigna el parametro a la estructura del comando
 		if tokens[token.Type] == "->" {
-			tokenAux, _, _ := s.Next()
+			tokenAux, err, _ := s.Next()
+			//Si existe un error lexico termina la lectura de la lista de tokens
+			if err != nil {
+				fmt.Println(err)
+				break
+			}
 			aux, paramError = paramDesigned(tokenAux.(*lexmachine.Token), paramType, aux)
 		}
 		//Verificamos si no existe un error en la asignacion
@@ -160,7 +166,6 @@ func paramDesigned(parameter *lexmachine.Token, paramType string, aux param) (pa
 		}
 		//TODO Agregar los id al slice de ids
 	}
-
 	return aux, nil
 }
 

@@ -1,0 +1,26 @@
+digraph REP_DISC{
+DISC[
+shape=box
+label=<
+<table border='0' cellborder='2' width='500' height="180">
+ 	<tr><td colspan="5"><b>DISC Hoja1_carnet.dsk</b></td></tr>
+<tr>
+<td height='200' width='100'> MBR </td>
+<td height='200' width='200'>PRIMARIA <br/> Part1<br/> Utilizado: 0.390625%</td>
+<td height='200' width='200'>PRIMARIA <br/> Part2<br/> Utilizado: 0.351562%</td>
+<td height='200' width='200'>PRIMARIA <br/> Part3<br/> Utilizado: 2.089844%</td>
+<td  height='200' width='100'>
+     <table border='0'  height='200' WIDTH='100' cellborder='1'>
+<tr>  <td height='60' colspan='3'>EXTENDIDA: Part4</td>  </tr>
+     <tr>
+<td height='200' width='75'>EBR</td>
+     <td height='200' width='150'>LOGICA<br/>Logic1<br/> Porcentaje: 0.292969%</td>
+ <td height='200' width='150'>LIBRE <br/> Porcentaje: 3.417969% </td>
+     </tr>
+     </table>
+     </td>
+</tr> 
+     </table>        
+>];
+
+}

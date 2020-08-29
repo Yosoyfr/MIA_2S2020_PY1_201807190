@@ -29,14 +29,15 @@ type partition struct {
 }
 
 //Funcion para leer el archivo binario que representa el disco
-func readFile(disc string) (*os.File, masterBootRecord) {
+func readFile(disc string) (*os.File, masterBootRecord, error) {
+	//Se instancia un struct de mbr
+	mbr := masterBootRecord{}
 	//Se abre el archivo
 	file, err := os.OpenFile(disc, os.O_RDWR, 0777)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Error: El sistema no puede encontrar el archivo especificado.")
+		return nil, mbr, fmt.Errorf("ERROR")
 	}
-	//Se instancia un struct de mbr
-	mbr := masterBootRecord{}
 	var size int64 = int64(binary.Size(mbr))
 	file.Seek(0, 0)
 	//Se obtiene la data del archivo binarios
@@ -47,7 +48,7 @@ func readFile(disc string) (*os.File, masterBootRecord) {
 	if err != nil {
 		log.Fatal("binary.Read failed", err)
 	}
-	return file, mbr
+	return file, mbr, nil
 }
 
 func readNextBytes(file *os.File, number int64) []byte {
@@ -67,7 +68,10 @@ L: Particoin Logica
 */
 func FKDisk(path string, size int64, unit byte, typeF byte, fit byte, name string) {
 	//Obtenemos el mbr del disco
-	file, mbr := readFile(path)
+	file, mbr, err := readFile(path)
+	if err != nil {
+		return
+	}
 	defer file.Close()
 	/*
 		[VALIDACIONES]
@@ -139,8 +143,6 @@ func FKDisk(path string, size int64, unit byte, typeF byte, fit byte, name strin
 		}
 		//Espacio disponible en la particion extendida
 		sizeAvailableExteded := extended.Size
-		fmt.Println(sizeAvailableExteded)
-
 		//Si en dado caso es la inicial, seteamos los valores
 		if prevEBR.Status == 0 {
 			sizeAvailableExteded = sizeAvailableExteded - int64(binary.Size(prevEBR))
