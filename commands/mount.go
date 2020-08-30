@@ -125,6 +125,7 @@ func Mount(path string, name string) {
 	} else {
 		mountedDisks[index] = disk
 	}
+	fmt.Println("[-] La particion ha sido montada con exito.")
 }
 
 func existPart(disk mounted, name [16]byte) bool {
@@ -162,7 +163,7 @@ func typeOf(x interface{}) int {
 
 //Funcion para mostrar todos las particiones montadas en el sistema
 func ShowMountedDisks() {
-	fmt.Println("Particiones montadas:")
+	fmt.Println("[-] Particiones montadas:")
 	//Recorremos la lista de discos montados
 	for _, disk := range mountedDisks {
 		//Path del disco temporal

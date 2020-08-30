@@ -3,7 +3,7 @@ EXec -pAth->/HOME/HOLA.ino
 exec -path->/home/Desktop/calificacion.mia
 
 #Crea un disco de 3000 Kb en la carpeta home
-Mkdisk -size->32 -path->/home/user/ \*
+Mkdisk -size->30 -path->/home/user/ \*
 -name->Disco1.dsk -uniT->k
 
 #Se crearán carpetas si no existen

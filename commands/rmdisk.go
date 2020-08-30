@@ -17,9 +17,9 @@ func RMDisk(path string) {
 			fmt.Println("Error: El sistema no puede encontrar el archivo especificado.")
 			return
 		}
-		fmt.Println("Disco Eliminado con exito!!")
+		fmt.Println("[-] Disco Eliminado con exito.")
 	} else {
-		fmt.Println("Cancelado")
+		fmt.Println("[-] Cancelado")
 	}
 
 }

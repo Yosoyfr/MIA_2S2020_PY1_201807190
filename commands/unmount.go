@@ -18,8 +18,8 @@ func Unmount(id string) {
 	}
 	//Si la particion no fue encontrada
 	if !findPart {
-		fmt.Println("[ALERTA]: La particion no fue encontrada")
+		fmt.Println("[ALERTA]: La particion", id, "no fue encontrada")
 		return
 	}
-	fmt.Println("La particion a sido desmontada con exito.")
+	fmt.Println("[-] La particion", id, "a sido desmontada con exito.")
 }

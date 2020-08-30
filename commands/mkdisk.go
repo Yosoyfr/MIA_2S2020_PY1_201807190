@@ -60,6 +60,7 @@ func MKDisk(path string, name string, size int64, unit byte) {
 	var binaryDisc bytes.Buffer
 	binary.Write(&binaryDisc, binary.BigEndian, mk)
 	writeNextBytes(file, binaryDisc.Bytes())
+	fmt.Println("[-] El disco ha sido creado con exito.")
 }
 
 //Funcion para escribir los bytes en el archivo binario

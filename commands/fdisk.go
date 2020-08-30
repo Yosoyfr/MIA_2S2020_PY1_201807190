@@ -209,6 +209,7 @@ func FKDisk(path string, size int64, unit byte, typeF byte, fit byte, name strin
 			binary.Write(&binaryNextEBR, binary.BigEndian, &nextEBR)
 			writeNextBytes(file, binaryNextEBR.Bytes())
 		}
+		fmt.Println("[-] La particion logica ha sido creada con exito.")
 		return
 	}
 	//[VALIDACION 1]
@@ -262,6 +263,7 @@ func FKDisk(path string, size int64, unit byte, typeF byte, fit byte, name strin
 		binary.Write(&binaryEBR, binary.BigEndian, &ebr)
 		writeNextBytes(file, binaryEBR.Bytes())
 	}
+	fmt.Println("[-] La particion ha sido creada con exito.")
 }
 
 //Funcion para calcular el valor de un tamaño a partir de la unidad definida

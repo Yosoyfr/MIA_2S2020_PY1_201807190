@@ -1,10 +1,57 @@
+#Procedemos a crear 3 discos
 Mkdisk -size->5 -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190" \*
--name->Hoja2_carnet.dsk -uniT->M
+-name->Hoja1_carnet.dsk 
+Mkdisk -size->15 -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190" \*
+-name->Hoja2_carnet.dsk 
+Mkdisk -size->10 -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190" \*
+-name->Hoja3_carnet.dsk 
 
-Fdisk -sizE->20 -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja2_carnet.dsk" -name->Part1
-Fdisk -sizE->18 -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja2_carnet.dsk" -name->Part2
-Fdisk -sizE->107 -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja2_carnet.dsk" -name->Part3
+#Particiones para el disco 1
+Fdisk -sizE->20 -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja1_carnet.dsk" -name->Part1
+Fdisk -sizE->18 -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja1_carnet.dsk" -name->Part2
+Fdisk -sizE->107 -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja1_carnet.dsk" -name->Part3
+
+#Particiones para el disco 2
 fdisk -sizE->190 -type->E -unit->K -fit->BF \*
--path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja2_carnet.dsk" -name->Part4
-
+-path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja2_carnet.dsk" -name->Extendida
 Fdisk -sizE->15 -type->L -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja2_carnet.dsk" -name->Logic1
+Fdisk -sizE->20 -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja2_carnet.dsk" -name->Part1
+Fdisk -sizE->15 -type->L -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja2_carnet.dsk" -name->Logic2
+
+#Particiones para el disco 3
+fdisk -sizE->190 -type->E -unit->K -fit->BF \*
+-path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja3_carnet.dsk" -name->Extendida
+Fdisk -sizE->15 -type->L -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja3_carnet.dsk" -name->Logic1
+Fdisk -sizE->20 -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja3_carnet.dsk" -name->Part1
+Fdisk -sizE->15 -type->L -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja3_carnet.dsk" -name->Logic2
+Fdisk -sizE->20 -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja3_carnet.dsk" -name->Part2
+Fdisk -sizE->20 -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja3_carnet.dsk" -name->Part3
+
+#Elimina de forma rápida una partición llamada Particion1
+fdisk -delete->fast -name->Particion1 -path->"/home/Disco1.dsk"
+
+#Elimina de forma completa una partición llamada Particion1
+fdisk -name->Particion1 -delete->full -path->"/home/Disco1.dsk"
+
+#Agrega 1 Mb a la partición Particion4 del Disco4.dsk
+#Se debe validar que haya espacio libre después de la partición
+fdisk -add->1 -unit->M -path->"/home/mis discos/Disco4.dsk" \*
+-name->Particion 4
+
+#Monta las particiones de Disco1.dsk
+mount -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja1_carnet.dsk" -name->Part1 #id->vda1
+mount -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja2_carnet.dsk" -name->Logic1 #id->vdb1
+mount -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja3_carnet.dsk" -name->Part3 #id->vdb2
+mount -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja1_carnet.dsk" -name->Part2 #id->vda2
+mount -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja2_carnet.dsk" -name->Logic2 #id->vdb2
+
+mount
+
+#Desmonta la partición con id vda1 (EnDisco1.dsk)
+unmount -id1->vda1
+#Si no existe, se debe mostrar error
+unmount -id1->vdx1
+#Desmonta una lista de particiones.
+unmount -id1->vda1 -id2->vdb2 -id3->vdc1
+
+mouNt

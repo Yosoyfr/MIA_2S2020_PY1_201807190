@@ -1,0 +1,16 @@
+#Monta las particiones de Disco1.dsk
+mount -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja1_carnet.dsk" -name->Logic1 #id->vda1
+mount -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja2_carnet.dsk" -name->Logic1 #id->vdb1
+mount -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja2_carnet.dsk" -name->Part3 #id->vdb2
+mount -path->"C:\Users\Francisco Suarez\Documents\GitHub\MIA_Proyecto1_201807190\Hoja1_carnet.dsk" -name->Part1 #id->vda2
+
+mount
+
+#Desmonta la partición con id vda1 (EnDisco1.dsk)
+unmount -id1->vda1
+#Si no existe, se debe mostrar error
+unmount -id1->vdx1
+#Desmonta una lista de particiones.
+unmount -id1->vda1 -id2->vdb2 -id3->vdc1
+
+mouNt
