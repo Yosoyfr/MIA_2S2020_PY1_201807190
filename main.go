@@ -30,6 +30,14 @@ func main() {
 	commands.Mount("Hoja2_carnet.dsk", "Part3")
 	commands.Mount("Hoja2_carnet.dsk", "Part")
 	commands.ShowMountedDisks()
+	commands.Unmount("vda1")
+	commands.Unmount("vda2")
+	commands.Unmount("vdb3")
+	commands.ShowMountedDisks()
+	commands.Mount("Hoja1_carnet.dsk", "Logic1")
+	commands.Mount("Hoja1_carnet.dsk", "Part1")
+	commands.Mount("Hoja2_carnet.dsk", "Part1")
+	commands.ShowMountedDisks()
 }
 
 //Funcionalidad del interprete
