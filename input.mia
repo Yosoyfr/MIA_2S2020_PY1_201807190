@@ -2,59 +2,61 @@
 EXec -pAth->/HOME/HOLA.ino
 exec -path->/home/Desktop/calificacion.mia
 
-#Crea un disco de 3000 Kb en la carpeta home
-Mkdisk -size->30 -path->/home/user/ \*
--name->Disco1.dsk -uniT->k
+#Crea un disco de 30 Mb en la carpeta home
+Mkdisk -size->30 -path->/home/prueba_discos \*
+-name->Disco1.dsk 
 
 #Se crearán carpetas si no existen
-mkdisk -SiZe->8 -pAth->"/home/mis discos/DISCO Prueba/" \*
+mkdisk -SiZe->8 -pAth->"/home/mis discos/DISCO Prueba" \*
 -namE->Disco_3.dsk
 #Creará un disco de 16 Mb ya que no hay parámetro unit
-Mkdisk -size->16 -path->"/home/mis discos/" -NaMe->Disco4.dsk
+Mkdisk -size->16 -path->"/home/mis discos" -NaMe->Disco4.dsk
 
 #Eliminar Disco_4.dsk
-rmDisk -path->"/home/mis discos/Disco_4.dsk"
+rmDisk -path->"/home/mis discos/Disco4.dsk"
 
 #Crear una Particion primaria llamada Particion1 de 72kb
 #Con el peor ajuste y con asignacion Indexada en elDisco1.dsk
-Fdisk -sizE->72 -path->/home/Disco1.dsk -name->Particion1
+Fdisk -sizE->72 -Unit->K -path->/home/prueba_discos/Disco1.dsk -name->Particion1
 
-#Crea una partición extendida dentro de Disco2 de 56 kb
+#Crea una partición extendida dentro de Disco1 de 5 Mb
 #Tiene el peor ajuste y asignación Enlazada
-fdisk -TyPE->E -path->/home/Disco2.dsk -Unit->B \*
--name->Particion2 -sizE->56
+fdisk -TyPE->E -path->/home/prueba_discos/Disco1.dsk \*
+-name->Particion2 -sizE->5 -Unit->M
 
 #Crea una partición lógica con el mejor ajuste, llamada Particion3,y
 #de 1 Mb en el Disco3 y asignación contigua
 fdisk -sizE->1 -type->L -unit->M -fit->WF \*
--path->"/mis discos/Disco3.dsk" -name->Particion3
+-path->"/home/prueba_discos/Disco1.dsk" -name->Particion3
 
 #Intenta crear una partición extendida dentro de Disco2 de 200 kb
 #Debería mostrar error ya que ya existe una partición extendida
 #dentro de Disco2
-fdisk -type->E -path->/home/Disco2.dsk -name->Part3 \*
--Unit->M -sizE->200
+fdisk -type->E -path->/home/prueba_discos/Disco1.dsk -name->Part3 \*
+-Unit->M -sizE->2
 
 #Elimina de forma rápida una partición llamada Particion1
-fdisk -delete->fast -name->Particion1 -path->"/home/Disco1.dsk"
+fdisk -delete->fast -name->Particion1 -path->"/home/prueba_discos/Disco1.dsk"
 
 #Elimina de forma completa una partición llamada Particion1
-fdisk -name->Particion1 -delete->full -path->"/home/Disco1.dsk"
+fdisk -name->Particion1 -delete->full -path->"/home/prueba_discos/Disco1.dsk"
 
-#Agrega 1 Mb a la partición Particion4 del Disco4.dsk
+#Agrega 1 Mb a la partición Particion4 del Disco1.dsk
 #Se debe validar que haya espacio libre después de la partición
-fdisk -add->1 -unit->M -path->"/home/mis discos/Disco4.dsk" \*
+fdisk -add->1 -unit->M -path->"/home/prueba_discos/Disco1.dsk" \*
 -name->Particion 4
 
 #Monta las particiones de Disco1.dsk
-mount -path->/home/Disco1.dsk -name->Part1 #id->vda1
-mount -path->/home/Disco2.dsk -name->Part1 #id->vdb1
-mount -path->/home/Disco3.dsk -name->Part2 #id->vdc1
-mount -path->/home/Disco1.dsk -name->Part2 #id->vda2
+mount -path->/home/prueba_discos/Disco1.dsk -name->Particion1 #id->vda1
+mount -path->/home/prueba_discos/Disco1.dsk -name->Particion2 #id->vda2
+mount -path->/home/prueba_discos/Disco1.dsk -name->Particion3 #id->vda3
+mount -path->/home/prueba_discos/Disco1.dsk -name->Part2 #id->error
 
 #Desmonta la partición con id vda1 (EnDisco1.dsk)
 unmount -id1->vda1
 #Si no existe, se debe mostrar error
 unmount -id1->vdx1
 #Desmonta una lista de particiones.
-unmount -id1->vda1 -id2->vdb2 -id3->vdc1
+unmount -id1->vda2 -id2->vda3
+
+mount

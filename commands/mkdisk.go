@@ -42,7 +42,7 @@ func createBinaryFile(name string, size int64, unit byte) (file *os.File, newSiz
 func MKDisk(path string, name string, size int64, unit byte) {
 	//Se verifica si existe el directorio o si no se crea
 	createDirectory(path)
-	path = path + "\\" + name
+	path = path + "/" + name
 	//Se crea el archivo binario que emula el disco
 	file, newSize := createBinaryFile(path, size, unit)
 	defer file.Close()
