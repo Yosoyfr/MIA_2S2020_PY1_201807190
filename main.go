@@ -15,11 +15,16 @@ import (
 		imports para el interprete
 	*/
 	"./interpreter"
+	/*
+		imports del sistea de archivos
+	*/
+	"./file_system"
 )
 
 //Funcion Main
 func main() {
-	interpreterF(readMIAFile("input.mia"))
+	//interpreterF(readMIAFile("input.mia"))
+	file_system.PruebaFile()
 	//commands.Reports("Hoja1_carnet.dsk", "disc", "png", "")
 }
 
