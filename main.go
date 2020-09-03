@@ -15,17 +15,13 @@ import (
 		imports para el interprete
 	*/
 	"./interpreter"
-	/*
-		imports del sistea de archivos
-	*/
-	"./file_system"
 )
 
 //Funcion Main
 func main() {
-	//interpreterF(readMIAFile("input.mia"))
-	file_system.PruebaFile()
-	//commands.Reports("Hoja1_carnet.dsk", "disc", "png", "")
+	interpreterF(readMIAFile("/home/yosoyfr/MIA/test_discos/mkfs.mia"))
+	//commands.Mkfs("vda1", "fast")
+	commands.Reports("vda1", "disk", "/home/yosoyfr/MIA/test_discos/report.pdf")
 }
 
 //Funcionalidad del interprete

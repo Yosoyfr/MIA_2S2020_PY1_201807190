@@ -99,6 +99,11 @@ func Mount(path string, name string) {
 		fmt.Println("[ERROR] Este particion no fue encontrada en el disco.")
 		return
 	}
+	//Las particiones extendidas no pueden ser montadas
+	if partition.Type == 'E' {
+		fmt.Println("[ERROR] No es permitido montar una particion extendida.")
+		return
+	}
 	//Si el disco no ha sido montado lo montamos
 	if disk.path == "" {
 		disk.letter, disk.path = diskLetter, path
@@ -170,8 +175,8 @@ func ShowMountedDisks() {
 		path := disk.path
 		//Recorremos las particiones de ese disco que han sido montadas
 		for _, part := range disk.parts {
-			typePart := typeOf(part.partition)
-			switch typePart {
+			partitionType := typeOf(part.partition)
+			switch partitionType {
 			case 0:
 				aux := part.partition.(partition)
 				fmt.Printf("id->%s -path->\"%s\" -name->\"%s\"\n", part.id, path, aux.Name)

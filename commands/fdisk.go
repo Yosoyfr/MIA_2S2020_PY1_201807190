@@ -69,10 +69,10 @@ L: Particoin Logica
 func FKDisk(path string, size int64, unit byte, typeF byte, fit byte, name string) {
 	//Obtenemos el mbr del disco
 	file, mbr, err := readFile(path)
+	defer file.Close()
 	if err != nil {
 		return
 	}
-	defer file.Close()
 	/*
 		[VALIDACIONES]
 		Al obtener el mbr, realizamos los analisis:
