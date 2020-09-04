@@ -20,8 +20,8 @@ import (
 //Funcion Main
 func main() {
 	interpreterF(readMIAFile("/home/yosoyfr/MIA/test_discos/mkfs.mia"))
-	//commands.Mkfs("vda1", "fast")
-	commands.Reports("vda1", "disk", "/home/yosoyfr/MIA/test_discos/report.pdf")
+	commands.Mkfs("vda1", "fast")
+	commands.Reports("vda1", "sb", "/home/yosoyfr/MIA/test_discos/report.pdf")
 }
 
 //Funcionalidad del interprete
@@ -43,7 +43,8 @@ func readMIAFile(route string) string {
 	var output string
 	file, err := os.Open(route)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Error: El sistema no puede encontrar el archivo especificado.")
+		return output
 	}
 	defer file.Close()
 	scanner := bufio.NewScanner(file)

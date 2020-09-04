@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 )
@@ -49,7 +50,7 @@ type virtualDirectoryTree struct {
 	Subdirectories         [6]int64
 	PrDirectoryDetail      int64
 	PrVirtualDirectoryTree int64
-	Owner                  int64
+	Owner                  [16]byte
 }
 
 //Struct del detalle de directorio
@@ -73,7 +74,7 @@ type iNode struct {
 	AllocatedBlock int64
 	Blocks         [4]int64
 	PrIndirect     int64
-	Owner          int64
+	Owner          [16]byte
 }
 
 //Struct del bloque de dato
@@ -99,7 +100,6 @@ func Mkfs(idPart string, Type string) {
 	}
 	//Obtenemos el file del disco
 	file, _, err := readFile(path)
-	defer file.Close()
 	if err != nil {
 		return
 	}
@@ -137,6 +137,8 @@ func Mkfs(idPart string, Type string) {
 		partitionStart = logicalPartition.Start
 		partitionName = strings.Replace(string(logicalPartition.Name[:]), "\x00", "", -1)
 	}
+	//Aplicamos la formateada full de la particion
+	writeFormat(file, partitionStart, partitionSize)
 	//Calculamos el numero de estructuras
 	numberOfStructures = (partitionSize - 2*superBootSize) / (27 + virtualTreeSize + directoryDetailSize + 5*iNodeSize + 20*blockSize + logSize)
 	//Creamos el superbloque para esta particion
@@ -149,8 +151,8 @@ func Mkfs(idPart string, Type string) {
 	sb.InodesCount = 5 * numberOfStructures
 	sb.BlocksCount = 20 * numberOfStructures
 	//Cantidad de estructuras libres
-	sb.VirtualTreeFree = numberOfStructures
-	sb.DirectoryDetailFree = numberOfStructures
+	sb.VirtualTreeFree = numberOfStructures - 1
+	sb.DirectoryDetailFree = numberOfStructures - 1
 	sb.InodesFree = 5 * numberOfStructures
 	sb.BlocksFree = 20 * numberOfStructures
 	//Fechas
@@ -174,18 +176,90 @@ func Mkfs(idPart string, Type string) {
 	sb.SizeDirectoryDetail = directoryDetailSize
 	sb.SizeInode = iNodeSize
 	sb.SizeBlock = blockSize
-	//Los first free inician en 0
-	sb.FirstFreeBitDirectoryTree = 0
-	sb.FirstFreeBitDirectoryDetail = 0
+	//Los first free
+	//[a] Se crea la carpeta '/' en la pasocion 0
+	sb.FirstFreeBitDirectoryTree = 1
+	sb.FirstFreeBitDirectoryDetail = 1
 	sb.FirstFreeBitInodeTable = 0
 	sb.FirstFreeBitBlocks = 0
 	//Numero magico : Carnet
 	copy(sb.MagicNum[:], "201807190")
 	//Procedemos a escribir en el disco el superboot asignado a esa particion
-	file.Seek(partitionStart, 0)
-	//Empezamos el proceso de guardar en binario la data en memoria del struct MBR
-	var binaryDisc bytes.Buffer
-	binary.Write(&binaryDisc, binary.BigEndian, &sb)
-	writeNextBytes(file, binaryDisc.Bytes())
+	writeSB(file, partitionStart, &sb)
+	//[a] Creamos la carpeta '/'
+	folder := virtualDirectoryTree{
+		Subdirectories:         [6]int64{-1, -1, -1, -1, -1, -1},
+		PrDirectoryDetail:      0,
+		PrVirtualDirectoryTree: -1,
+	}
+	copy(folder.CreatedAt[:], timestamp)
+	copy(folder.DirectoryName[:], "/")
+	//Posicion en donde se va a escribir el arbol de directorio virtual
+	indexVDT := sb.PrDirectoryTree
+	//Escribimos el arbol virtual de directorio de '/'
+	writeVDT(file, indexVDT, &folder)
+	//[b] Creamos el detalle directorio de la carpeta '/'
+	dd := directoryDetail{PrDirectoryDetail: 0}
+	//Posicion en donde se va a escribir el detalle de directorio
+	indexDD := sb.PrDirectoryDetail
+	//Escribimos el arbol virtual de directorio de '/'
+	writeDD(file, indexDD, &dd)
+
+	file.Close()
 	fmt.Println("[-] Formateo exitoso.")
+}
+
+//Funcion para formatear la particion
+func writeFormat(file *os.File, index int64, size int64) {
+	format := make([]int8, size)
+	file.Seek(index, 0)
+	//Empezamos el proceso de guardar en binario la data en memoria del struct
+	var binaryDisc bytes.Buffer
+	binary.Write(&binaryDisc, binary.BigEndian, &format)
+	writeNextBytes(file, binaryDisc.Bytes())
+}
+
+//Funcion para escribir en el archivo la estructura de un super bloque de directorio
+func writeSB(file *os.File, index int64, sb *superBoot) {
+	file.Seek(index, 0)
+	//Empezamos el proceso de guardar en binario la data en memoria del struct
+	var binaryDisc bytes.Buffer
+	binary.Write(&binaryDisc, binary.BigEndian, sb)
+	writeNextBytes(file, binaryDisc.Bytes())
+}
+
+//Funcion para escribir en el archivo la estructura de un arbol virtual de directorio
+func writeVDT(file *os.File, index int64, vdt *virtualDirectoryTree) {
+	file.Seek(index, 0)
+	//Empezamos el proceso de guardar en binario la data en memoria del struct
+	var binaryDisc bytes.Buffer
+	binary.Write(&binaryDisc, binary.BigEndian, vdt)
+	writeNextBytes(file, binaryDisc.Bytes())
+}
+
+//Funcion para escribir en el archivo la estructura de un detalle de directorio
+func writeDD(file *os.File, index int64, dd *directoryDetail) {
+	file.Seek(index, 0)
+	//Empezamos el proceso de guardar en binario la data en memoria del struct
+	var binaryDisc bytes.Buffer
+	binary.Write(&binaryDisc, binary.BigEndian, dd)
+	writeNextBytes(file, binaryDisc.Bytes())
+}
+
+//Funcion para reescribir algun bitmap en el disco
+func writeBitmap(file *os.File, index int64, inode *iNode) {
+	file.Seek(index, 0)
+	//Empezamos el proceso de guardar en binario la data en memoria del struct
+	var binaryDisc bytes.Buffer
+	binary.Write(&binaryDisc, binary.BigEndian, inode)
+	writeNextBytes(file, binaryDisc.Bytes())
+}
+
+//Funcion para escribir en el archivo la estructura de un i-nodo
+func writeInode(file *os.File, index int64, inode *iNode) {
+	file.Seek(index, 0)
+	//Empezamos el proceso de guardar en binario la data en memoria del struct
+	var binaryDisc bytes.Buffer
+	binary.Write(&binaryDisc, binary.BigEndian, inode)
+	writeNextBytes(file, binaryDisc.Bytes())
 }

@@ -26,7 +26,7 @@ func Reports(id string, rep string, path string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	extension := path[(len(path)-3):(len(path))]
+	extension := path[(len(path) - 3):(len(path))]
 	exec.Command("dot", "-T"+extension, "report.dot", "-o", path).Output()
 }
 
