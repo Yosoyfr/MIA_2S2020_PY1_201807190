@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -194,20 +195,25 @@ func Mkfs(idPart string, Type string) {
 	}
 	copy(folder.CreatedAt[:], timestamp)
 	copy(folder.DirectoryName[:], "/")
-	//Posicion en donde se va a escribir el arbol de directorio virtual
-	indexVDT := sb.PrDirectoryTree
 	//Escribimos el arbol virtual de directorio de '/'
-	writeVDT(file, indexVDT, &folder)
+	writeVDT(file, sb.PrDirectoryTree, &folder)
+	//Reescribimos el bitmap de arbol virtual de directorios
+	bitMapVDT := []byte{'1'}
+	writeBitmap(file, sb.PrDirectoryTreeBitmap, bitMapVDT)
 	//[b] Creamos el detalle directorio de la carpeta '/'
-	dd := directoryDetail{PrDirectoryDetail: 0}
-	//Posicion en donde se va a escribir el detalle de directorio
-	indexDD := sb.PrDirectoryDetail
+	dd := directoryDetail{PrDirectoryDetail: -1}
 	//Escribimos el arbol virtual de directorio de '/'
-	writeDD(file, indexDD, &dd)
-
+	writeDD(file, sb.PrDirectoryDetail, &dd)
+	//Reescribimos el bitmap de detellae de directorio
+	bitMapDD := []byte{'1'}
+	writeBitmap(file, sb.PrDirectoryDetailBitmap, bitMapDD)
 	file.Close()
 	fmt.Println("[-] Formateo exitoso.")
 }
+
+/*
+	Funciones para la escritura de estructuras en el disco
+*/
 
 //Funcion para formatear la particion
 func writeFormat(file *os.File, index int64, size int64) {
@@ -247,11 +253,11 @@ func writeDD(file *os.File, index int64, dd *directoryDetail) {
 }
 
 //Funcion para reescribir algun bitmap en el disco
-func writeBitmap(file *os.File, index int64, inode *iNode) {
+func writeBitmap(file *os.File, index int64, bitMap []byte) {
 	file.Seek(index, 0)
 	//Empezamos el proceso de guardar en binario la data en memoria del struct
 	var binaryDisc bytes.Buffer
-	binary.Write(&binaryDisc, binary.BigEndian, inode)
+	binary.Write(&binaryDisc, binary.BigEndian, &bitMap)
 	writeNextBytes(file, binaryDisc.Bytes())
 }
 
@@ -262,4 +268,57 @@ func writeInode(file *os.File, index int64, inode *iNode) {
 	var binaryDisc bytes.Buffer
 	binary.Write(&binaryDisc, binary.BigEndian, inode)
 	writeNextBytes(file, binaryDisc.Bytes())
+}
+
+/*
+	Funciones para obtener estructuras en el disco
+*/
+
+//Funcion para recuperar el bitmap en el disco de alguna estructura
+func getBitmap(file *os.File, index int64, size int64) []byte {
+	bitMap := make([]byte, size)
+	file.Seek(index, 0)
+	//Se obtiene la data del archivo binarios
+	data := readNextBytes(file, size)
+	buffer := bytes.NewBuffer(data)
+	//Se asigna al mbr declarado para leer la informacion de ese disco
+	err := binary.Read(buffer, binary.BigEndian, &bitMap)
+	if err != nil {
+		log.Fatal("binary.Read failed", err)
+	}
+	return bitMap
+}
+
+//Funcion para recuperar un arbol virtual de directorios
+func getVirtualDirectotyTree(file *os.File, pr int64, bm int64) virtualDirectoryTree {
+	vdt := virtualDirectoryTree{}
+	size := int64(binary.Size(vdt))
+	index := pr + bm*size
+	file.Seek(index, 0)
+	//Se obtiene la data del archivo binarios
+	data := readNextBytes(file, size)
+	buffer := bytes.NewBuffer(data)
+	//Se asigna al mbr declarado para leer la informacion de ese disco
+	err := binary.Read(buffer, binary.BigEndian, &vdt)
+	if err != nil {
+		log.Fatal("binary.Read failed", err)
+	}
+	return vdt
+}
+
+//Funcion para recuperar un detalle de directorio
+func getDirectotyDetail(file *os.File, pr int64, bm int64) directoryDetail {
+	dd := directoryDetail{}
+	size := int64(binary.Size(dd))
+	index := pr + bm*size
+	file.Seek(index, 0)
+	//Se obtiene la data del archivo binarios
+	data := readNextBytes(file, size)
+	buffer := bytes.NewBuffer(data)
+	//Se asigna al mbr declarado para leer la informacion de ese disco
+	err := binary.Read(buffer, binary.BigEndian, &dd)
+	if err != nil {
+		log.Fatal("binary.Read failed", err)
+	}
+	return dd
 }
