@@ -19,9 +19,11 @@ import (
 
 //Funcion Main
 func main() {
+	//interpreterF(readMIAFile("/home/yosoyfr/MIA/test_discos/input.mia"))
 	interpreterF(readMIAFile("/home/yosoyfr/MIA/test_discos/mkfs.mia"))
-	commands.Mkfs("vda1", "fast")
-	commands.Reports("vda1", "sb", "/home/yosoyfr/MIA/test_discos/report.pdf")
+	//commands.Mkfs("vda1", "fast")
+	commands.Mkdir("vda1", "/home/etc", true)
+	//commands.Reports("vda1", "sb", "/home/yosoyfr/MIA/test_discos/report.pdf")
 }
 
 //Funcionalidad del interprete

@@ -317,42 +317,13 @@ func reportSuperBoot(id string) string {
 		return ""
 	}
 	file, _, err := readFile(diskPath)
-	defer file.Close()
 	if err != nil {
 		return ""
 	}
 	//Definimos el tipo de particion que es
-	partitionType := typeOf(mountedPart.partition)
-	var primaryPartition partition
-	var logicalPartition extendedBootRecord
-	switch partitionType {
-	case 0:
-		primaryPartition = mountedPart.partition.(partition)
-	case 1:
-		logicalPartition = mountedPart.partition.(extendedBootRecord)
-	}
-	//Posicion del bit donde comienza el superboot de esa particon
-	var indexSB int64
-	//Nombre de la particon
-	var name string
-	//Trabajamos con la particion primaria
-	if primaryPartition.Status != 0 {
-		indexSB = primaryPartition.Start
-		name = strings.Replace(string(primaryPartition.Name[:]), "\x00", "", -1)
-	} else { //Trabajos con la particion logica
-		indexSB = logicalPartition.Start
-		name = strings.Replace(string(logicalPartition.Name[:]), "\x00", "", -1)
-	}
-	//Nos posicionamos en esa parte del archivo
-	file.Seek(indexSB, 0)
-	//Se obtiene la data del archivo binarios
-	data := readNextBytes(file, int64(binary.Size(superboot)))
-	buffer := bytes.NewBuffer(data)
-	//Se asigna al mbr declarado para leer la informacion de ese disco
-	err = binary.Read(buffer, binary.BigEndian, &superboot)
-	if err != nil {
-		log.Fatal("binary.Read failed", err)
-	}
+	indexSB, name := getPartitionType(mountedPart)
+	//Recuperamos el superbloque de la particion
+	superboot = getSB(file, indexSB)
 	//Empezamos a escribir el reporte
 	dot += "Node0 [label=<\n"
 	dot += "<table border=\"0\" cellborder=\"1\" cellpadding=\"8\">\n"
@@ -451,5 +422,6 @@ func reportSuperBoot(id string) string {
 	dot += "</td></tr>\n"
 	dot += "</table>\n>];\n"
 	dot += "}"
+	file.Close()
 	return dot
 }
