@@ -21,14 +21,21 @@ import (
 func main() {
 	//interpreterF(readMIAFile("/home/yosoyfr/MIA/test_discos/input.mia"))
 	interpreterF(readMIAFile("/home/yosoyfr/MIA/test_discos/mkfs.mia"))
-	//commands.Mkfs("vda1", "fast")
-	fmt.Println("-----------------------")
-	//commands.Mkdir("vda1", "/home/yosoyfr/Descargas", true)
-	//commands.Mkdir("vda1", "/home/yosoyfr/Escritorio", true)
-	//commands.Mkdir("vda1", "/bin", true)
-	//commands.Mkdir("vda1", "/etc/usr", true)
-	commands.Mkdir("vda1", "/snap", false)
-	commands.Reports("vda1", "sb", "/home/yosoyfr/MIA/test_discos/report.pdf")
+	/*
+		commands.Mkfs("vda1", "fast")
+		fmt.Println("-----------------------")
+		commands.Mkdir("vda1", "/home/yosoyfr/Descargas", true)
+		//commands.Mkdir("vda1", "/home/yosoyfr/Escritorio", true)
+		commands.Mkdir("vda1", "/media", true)
+		commands.Mkdir("vda1", "/log", true)
+		commands.Mkdir("vda1", "/bin", true)
+		commands.Mkdir("vda1", "/opt", true)
+		commands.Mkdir("vda1", "/proc", true)
+		commands.Mkdir("vda1", "/etc/usr", true)
+		commands.Mkdir("vda1", "/dev", false)
+		commands.Reports("vda1", "directorio", "/home/yosoyfr/MIA/test_discos/directorio.pdf")
+		commands.Reports("vda1", "sb", "/home/yosoyfr/MIA/test_discos/report.pdf")
+	*/
 }
 
 //Funcionalidad del interprete

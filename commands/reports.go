@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -21,6 +22,8 @@ func Reports(id string, rep string, path string) {
 		report = reportDisk(id)
 	case "sb":
 		report = reportSuperBoot(id)
+	case "directorio":
+		report = reportVirtualDirectoryTree(id)
 	}
 	err := ioutil.WriteFile("report.dot", []byte(report), 0644)
 	if err != nil {
@@ -423,5 +426,84 @@ func reportSuperBoot(id string) string {
 	dot += "</table>\n>];\n"
 	dot += "}"
 	file.Close()
+	return dot
+}
+
+//Reporte de arbol virtual de directorio
+func reportVirtualDirectoryTree(id string) string {
+	var dot string = "digraph REP_SB{\nrankdir = LR;\n node [shape=plain, fontsize=20];\n ranksep = 2;\n\n"
+	//Superboot a trabajar
+	sb := superBoot{}
+	//Obtenemos el file y la particion a trabajar
+	diskPath, mountedPart, err := searchPartition(id)
+	if err != nil {
+		return ""
+	}
+	file, _, err := readFile(diskPath)
+	if err != nil {
+		return ""
+	}
+	//Definimos el tipo de particion que es
+	indexSB, _ := getPartitionType(mountedPart)
+	//Recuperamos el superbloque de la particion
+	sb = getSB(file, indexSB)
+	//Empezamos a escribir el reporte
+	//fmt.Println(sb, name)
+	dot += vdtModel(file, sb, 0)
+	dot += "}"
+	file.Close()
+	return dot
+}
+
+func vdtModel(file *os.File, sb superBoot, index int64) string {
+	dot := "N"
+	dot += strconv.FormatInt(index, 10)
+	dot += "[color=\"#99ccff\"  label=<\n"
+	dot += "<table border=\"0\" cellborder=\"1\" cellpadding=\"10\">\n"
+	vdt := getVirtualDirectotyTree(file, sb.PrDirectoryTree, index)
+	dot += "\t<tr><td bgcolor=\"#99ccff\" colspan=\"2\" PORT=\"0\">"
+	dot += strings.Replace(string(vdt.DirectoryName[:]), "\x00", "", -1)
+	dot += "</td></tr>\n"
+	//Subdirectorios
+	for i := 0; i < len(vdt.Subdirectories); i++ {
+		dot += "\t<tr><td>aptr"
+		dot += strconv.Itoa(i + 1)
+		dot += "</td><td PORT=\""
+		dot += strconv.Itoa(i + 1)
+		dot += "\">"
+		dot += strconv.FormatInt(vdt.Subdirectories[i], 10)
+		dot += "</td></tr>\n"
+	}
+	//Detalle de directorio
+	dot += "\t<tr><td bgcolor=\"#7ab648\" PORT=\"7\">detalle_D</td><td>"
+	dot += strconv.FormatInt(vdt.PrDirectoryDetail, 10)
+	dot += "</td></tr>\n"
+	//Apuntador indirecto
+	dot += "\t<tr><td bgcolor=\"#99ccff\" PORT=\"8\">aptr_ind</td><td>"
+	dot += strconv.FormatInt(vdt.PrVirtualDirectoryTree, 10)
+	dot += "</td></tr>\n"
+	dot += "</table>\n>];"
+	//Creamos los subdirecotrios
+	for i := 0; i < len(vdt.Subdirectories); i++ {
+		if vdt.Subdirectories[i] != -1 {
+			dot += vdtModel(file, sb, vdt.Subdirectories[i])
+			dot += "N"
+			dot += strconv.FormatInt(index, 10)
+			dot += ":"
+			dot += strconv.Itoa(i + 1)
+			dot += " -> N"
+			dot += strconv.FormatInt(vdt.Subdirectories[i], 10)
+			dot += ":0;\n"
+		}
+	}
+	//Creamos el indirecto si es que existe
+	if vdt.PrVirtualDirectoryTree != -1 {
+		dot += vdtModel(file, sb, vdt.PrVirtualDirectoryTree)
+		dot += "N"
+		dot += strconv.FormatInt(index, 10)
+		dot += ":8-> N"
+		dot += strconv.FormatInt(vdt.PrVirtualDirectoryTree, 10)
+		dot += ":0;\n"
+	}
 	return dot
 }
