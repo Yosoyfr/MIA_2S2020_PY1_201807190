@@ -1,7 +1,9 @@
 package interpreter
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -15,16 +17,21 @@ import (
 
 //Posibles parametros
 type param struct {
-	size      int64
-	path      string
-	name      string
-	unit      byte
-	Type      byte
-	fit       byte
-	delete    string
-	add       string
-	idn       []string
-	paramType string
+	size         int64
+	path         string
+	name         string
+	unit         byte
+	Type         byte
+	fit          byte
+	delete       string
+	add          string
+	idn          []string
+	id           string
+	pathComplete bool
+	txt          string
+	filen        []string
+	ruta         string
+	paramType    string
 }
 
 //Tipos de type que puede tener una particion
@@ -32,6 +39,22 @@ var partitionsType []byte = []byte{'P', 'E', 'L'}
 
 //Tipos de unidades que tener un tamaño
 var unitType []byte = []byte{'B', 'K', 'M'}
+
+//Funcion para leer los archivos con extension ".mia"
+func ReadMIAFile(route string) string {
+	var output string
+	file, err := os.Open(route)
+	if err != nil {
+		fmt.Println("Error: El sistema no puede encontrar el archivo especificado.")
+		return output
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		output += scanner.Text() + "\n"
+	}
+	return output
+}
 
 //Funcion para checkear el comando que se va a ejecutar
 func CommandChecker(s *lexmachine.Scanner) {
@@ -71,6 +94,8 @@ func CommandChecker(s *lexmachine.Scanner) {
 			paramType = strings.ToUpper(paramType)
 		} else if tokens[token.Type] == "IDN" {
 			paramType = "IDN"
+		} else if tokens[token.Type] == "FILEN" {
+			paramType = "FILEN"
 		}
 		//Se asigna el parametro a la estructura del comando
 		if tokens[token.Type] == "->" {
@@ -82,6 +107,9 @@ func CommandChecker(s *lexmachine.Scanner) {
 			}
 			aux, paramError = paramDesigned(tokenAux.(*lexmachine.Token), paramType, aux)
 			paramType = ""
+		}
+		if paramType == "P" {
+			aux.pathComplete = true
 		}
 		//Verificamos si no existe un error en la asignacion
 		if paramError != nil {
@@ -174,15 +202,42 @@ func paramDesigned(parameter *lexmachine.Token, paramType string, aux param) (pa
 			return aux, fmt.Errorf("Error")
 		}
 		aux.idn = append(aux.idn, string(parameter.Lexeme))
+	} else if paramType == "ID" {
+		if tokens[parameter.Type] != "ID" {
+			fmt.Println("Error: Se esperaba un ID")
+			return aux, fmt.Errorf("Error")
+		}
+		aux.id = string(parameter.Lexeme)
+	} else if paramType == "P" {
+		fmt.Println("Error: Este comando no recibe parametros")
+		return aux, fmt.Errorf("Error")
+	} else if paramType == "CONT" {
+		if tokens[parameter.Type] != "ROUTE" {
+			fmt.Println("Error: Se esperaba una cadena.")
+			return aux, fmt.Errorf("Error")
+		}
+		aux.txt = strings.Replace(string(parameter.Lexeme), "\"", "", -1)
+	} else if paramType == "FILEN" {
+		if tokens[parameter.Type] != "ROUTE" {
+			fmt.Println("Error: Se esperaba una ruta.")
+			return aux, fmt.Errorf("Error")
+		}
+		aux.filen = append(aux.filen, string(parameter.Lexeme))
+	} else if paramType == "RUTA" {
+		if tokens[parameter.Type] != "ROUTE" {
+			fmt.Println("Error: Se esperaba una ruta.")
+			return aux, fmt.Errorf("Error")
+		}
+		aux.ruta = string(parameter.Lexeme)
 	} else {
-		fmt.Println("Error: En la lectura del comando")
+		fmt.Println("Error: En la lectura del comando", aux.paramType)
 		return aux, fmt.Errorf("Error")
 	}
 	return aux, nil
 }
 
 func controlCommands(command param) {
-	if command.Type == 0 {
+	if command.Type == 0 || command.Type == 'F' {
 		command.Type = 'P'
 	}
 	if command.fit == 0 {
@@ -195,17 +250,25 @@ func controlCommands(command param) {
 	//Ejecutamos el tipo de comando que llega
 	switch command.paramType {
 	case "EXEC":
+		if requiredParameters([]string{"PATH"}, command) != nil {
+			return
+		}
+		ReadMIAFile(command.path)
 		fmt.Println("Hara el exec")
+	case "PAUSE":
+		systemPaused()
 	case "MKDISK":
 		if requiredParameters([]string{"SIZE", "PATH", "NAME"}, command) != nil {
 			return
 		}
-		commands.MKDisk(command.path, command.name, command.size, command.unit)
+		//commands.MKDisk(command.path, command.name, command.size, command.unit)
+		fmt.Println("Hara el mkdisk")
 	case "RMDISK":
 		if requiredParameters([]string{"PATH"}, command) != nil {
 			return
 		}
-		commands.RMDisk(command.path)
+		//commands.RMDisk(command.path)
+		fmt.Println("Hara el rmdisk")
 	case "FDISK":
 		if command.add != "" && command.delete == "" {
 			fmt.Println("Se hara un add a una particion")
@@ -215,7 +278,8 @@ func controlCommands(command param) {
 			if requiredParameters([]string{"SIZE", "PATH", "NAME"}, command) != nil {
 				return
 			}
-			commands.FKDisk(command.path, command.size, command.unit, command.Type, command.fit, command.name)
+			//commands.FKDisk(command.path, command.size, command.unit, command.Type, command.fit, command.name)
+			fmt.Println("Hara el fdisk")
 		} else {
 			fmt.Println("Error: El comando FDISK proporciona un error en su estructura")
 		}
@@ -226,15 +290,45 @@ func controlCommands(command param) {
 			if requiredParameters([]string{"PATH", "NAME"}, command) != nil {
 				return
 			}
-			commands.Mount(command.path, command.name)
+			//commands.Mount(command.path, command.name)
+			fmt.Println("Hara el mount")
 		}
 	case "UNMOUNT":
 		if requiredParameters([]string{"IDN"}, command) != nil {
 			return
 		}
 		for _, idn := range command.idn {
-			commands.Unmount(idn)
+			//commands.Unmount(idn)
+			fmt.Println("Hara el unmount", idn)
 		}
+	case "MKFS":
+		if requiredParameters([]string{"ID"}, command) != nil {
+			return
+		}
+		fmt.Println("Hara el mkfs")
+		//commands.Mkfs(command.id, "full")
+	case "MKDIR":
+		if requiredParameters([]string{"ID", "PATH"}, command) != nil {
+			return
+		}
+		fmt.Println("Hara el mkdir")
+		//commands.Mkdir(command.id, command.path, command.pathComplete)
+	case "MKFILE":
+		if requiredParameters([]string{"ID", "PATH"}, command) != nil {
+			return
+		}
+		fmt.Println("Hara el mkfile")
+	case "CAT":
+		if requiredParameters([]string{"ID", "FILEN"}, command) != nil {
+			return
+		}
+		fmt.Println("Hara el cat")
+	case "REP":
+		if requiredParameters([]string{"NAME", "PATH", "ID"}, command) != nil {
+			return
+		}
+		fmt.Println("Hara un reporte")
+		commands.Reports(command.id, strings.ToUpper(command.name), command.path, command.ruta)
 	}
 }
 
@@ -261,6 +355,16 @@ func requiredParameters(params []string, command param) error {
 		case "IDN":
 			if len(command.idn) == 0 {
 				fmt.Println("Error: El comando a ejecutar necesita un ID por lo menos.")
+				return fmt.Errorf("Error")
+			}
+		case "ID":
+			if command.id == "" {
+				fmt.Println("Error: El comando a ejecutar necesita un ID por lo menos.")
+				return fmt.Errorf("Error")
+			}
+		case "CAT":
+			if len(command.filen) == 0 {
+				fmt.Println("Error: El comando a ejecutar necesita un file por lo menos.")
 				return fmt.Errorf("Error")
 			}
 		}
@@ -312,4 +416,9 @@ func validUnitTypes(command param) (param, error) {
 	//En otro caso es error
 	fmt.Println("Error: El tipo de unidad no es valido.")
 	return command, fmt.Errorf("Error")
+}
+
+func systemPaused() {
+	fmt.Print("[ALERTA] El sistema a pausado toda ejecucion, presione ENTER para continuar con la ejecucion.")
+	bufio.NewScanner(os.Stdin).Scan()
 }

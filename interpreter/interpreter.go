@@ -140,6 +140,7 @@ func initLexer() (*lex.Lexer, error) {
 	lexer.Add([]byte(`-id[0-9]+`), token("IDN"))
 	lexer.Add([]byte("( |\t|\r)+"), skip)
 	lexer.Add([]byte("\n"), token("FINISHCOMMAND"))
+	lexer.Add([]byte(`-file[0-9]+`), token("FILEN"))
 	err := lexer.Compile()
 	if err != nil {
 		return nil, err

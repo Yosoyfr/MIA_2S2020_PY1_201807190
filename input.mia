@@ -12,6 +12,8 @@ mkdisk -SiZe->8 -pAth->"/home/mis discos/DISCO Prueba" \*
 #Creará un disco de 16 Mb ya que no hay parámetro unit
 Mkdisk -size->16 -path->"/home/mis discos" -NaMe->Disco4.dsk
 
+pause
+
 #Eliminar Disco_4.dsk
 rmDisk -path->"/home/mis discos/Disco4.dsk"
 
@@ -60,3 +62,26 @@ unmount -id1->vdx1
 unmount -id1->vda2 -id2->vda3
 
 mount
+
+mkfs -id->vda1 -type->fast
+
+mKfS -iD->vdb1
+
+Mkdir -P -id->vda1 -path->"/home/user/docs/usac"
+
+Mkdir -ID->vda1 -path->"/home/mis documentos/archivos 2016"
+
+mkFile -SIZE->15 -id->vdb1 -PatH->"/home/user/docs/a.txt" -p
+
+mkfile -id->vda1 -path->"/home/mis documentos/archivo 1.txt"
+
+mkfile -id->vda1 -path->"/home/user/docs/b.txt" -p \* 
+-cont->"/home/Documents/b.txt"
+
+Cat -file1->"/home/user/docs/a.txt" -Id->vdb1
+
+Cat -file1->"/home/a.txt" -Id->vdb1 -file2->"/home/b.txt" -file3->"/home/c.txt"
+
+rep -id->vda2 -path->"/home/user/reports/reporte 2.pdf" -name->bm_arbdir -ruta->"/home/misdocumentos"
+
+rep -id->vda1 -path->"/home/user/reports/reporte 3.jpg" -name->archive_directorio

@@ -13,17 +13,25 @@ import (
 )
 
 //Funcion manager del tipo de reporte a crear
-func Reports(id string, rep string, path string) {
+func Reports(id string, rep string, path string, route string) {
+	//Reportes de bitmaps
+	if strings.HasPrefix(rep, "BM_") {
+		reportBM(id, rep, path, route)
+		return
+	}
+	//Reportes con GRAPHVIZ
 	var report string
 	switch rep {
-	case "mbr":
+	case "MBR":
 		report = reportMBR(id)
-	case "disk":
+	case "DISK":
 		report = reportDisk(id)
-	case "sb":
+	case "SB":
 		report = reportSuperBoot(id)
-	case "directorio":
+	case "DIRECTORIO":
 		report = reportVirtualDirectoryTree(id)
+	default:
+		fmt.Println("[ERROR]: El tipo de reporte a crear no existe |", rep, "|.")
 	}
 	err := ioutil.WriteFile("report.dot", []byte(report), 0644)
 	if err != nil {
@@ -31,6 +39,48 @@ func Reports(id string, rep string, path string) {
 	}
 	extension := path[(len(path) - 3):(len(path))]
 	exec.Command("dot", "-T"+extension, "report.dot", "-o", path).Output()
+}
+
+func reportBM(id string, rep string, path string, route string) {
+	//Superboot a trabajar
+	sb := superBoot{}
+	//Obtenemos el file y la particion a trabajar
+	diskPath, mountedPart, err := searchPartition(id)
+	if err != nil {
+		return
+	}
+	file, _, err := readFile(diskPath)
+	if err != nil {
+		return
+	}
+	//Definimos el tipo de particion que es
+	indexSB, _ := getPartitionType(mountedPart)
+	//Recuperamos el superbloque de la particion
+	sb = getSB(file, indexSB)
+	//Recuperamos el bitmap que se indique en REP
+	var bitmap []byte
+	switch rep {
+	case "BM_ARBDIR":
+		fmt.Println("Tiene que hacer el reporte de bm arbol directorio")
+		sizeBM := sb.PrDirectoryTree - sb.PrDirectoryTreeBitmap
+		bitmap = getBitmap(file, sb.PrDirectoryTreeBitmap, sizeBM)
+	case "BM_DETDIR":
+		fmt.Println("Tiene que hacer el reporte de bm detalle directorio")
+		sizeBM := sb.PrDirectoryDetail - sb.PrDirectoryDetailBitmap
+		bitmap = getBitmap(file, sb.PrDirectoryDetailBitmap, sizeBM)
+	case "BM_INODE":
+		fmt.Println("Tiene que hacer el reporte de bm inodes")
+		sizeBM := sb.PrInodeTable - sb.PrInodeTableBitmap
+		bitmap = getBitmap(file, sb.PrInodeTableBitmap, sizeBM)
+	case "BM_BLOCK":
+		fmt.Println("Tiene que hacer el reporte de bm bloques")
+		sizeBM := sb.PrBlocks - sb.PrBlocksBitmap
+		bitmap = getBitmap(file, sb.PrBlocksBitmap, sizeBM)
+	default:
+		fmt.Println("[ERROR]: El tipo de reporte a crear no existe |", rep, "|.")
+	}
+	//Creamos el archivo que representa el reporte de bitmap
+	createReportBM(path, bitmap)
 }
 
 func reportMBR(id string) string {
@@ -506,4 +556,31 @@ func vdtModel(file *os.File, sb superBoot, index int64) string {
 		dot += ":0;\n"
 	}
 	return dot
+}
+
+//Funcion para crear reportes de bitmaps
+func createReportBM(path string, bitmap []byte) {
+	//Creamos el archivo
+	file, err := os.Create(path)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	data := ""
+	//Creamos la data que representara el BITMAP
+	for i, bm := range bitmap {
+		if i%20 == 0 {
+			data += "\n|"
+		}
+		if bm == '1' {
+			data += "1|"
+		} else {
+			data += "0|"
+		}
+	}
+	// Escribir la data del bm en el archivo
+	err = ioutil.WriteFile(path, []byte(data), 0644)
+	if err != nil {
+		panic(err)
+	}
 }

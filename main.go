@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
 	/*
 		Imports para los comandos de consola
@@ -20,7 +21,9 @@ import (
 //Funcion Main
 func main() {
 	//interpreterF(readMIAFile("/home/yosoyfr/MIA/test_discos/input.mia"))
-	interpreterF(readMIAFile("/home/yosoyfr/MIA/test_discos/mkfs.mia"))
+	//interpreterF(readMIAFile("/home/yosoyfr/MIA/test_discos/mkfs.mia"))
+	//interpreterF("mkfs -id->vda1 -type->fast" + "\n")
+	//interpreterF(interpreter.ReadMIAFile("input.mia"))
 	/*
 		commands.Mkfs("vda1", "fast")
 		fmt.Println("-----------------------")
@@ -36,6 +39,23 @@ func main() {
 		commands.Reports("vda1", "directorio", "/home/yosoyfr/MIA/test_discos/directorio.pdf")
 		commands.Reports("vda1", "sb", "/home/yosoyfr/MIA/test_discos/report.pdf")
 	*/
+
+	//Prueba de leer consola
+	//readConsole()
+	commands.Reports("vda1", "BM_ARBDIR", "/home/yosoyfr/MIA/test_discos/report.pdf", "")
+}
+
+func readConsole() {
+	reader := bufio.NewReader(os.Stdin)
+	text := ""
+	for !strings.EqualFold(text, "EXIT\n") {
+		fmt.Print("MIA_201807190 -> ")
+		text, _ = reader.ReadString('\n')
+		text = strings.Replace(text, "\r", "", -1)
+		interpreterF(text)
+	}
+	fmt.Println("[EXIT]")
+
 }
 
 //Funcionalidad del interprete
@@ -43,6 +63,7 @@ func interpreterF(input string) {
 	interpreter.CommandChecker(interpreter.ScanInput(input))
 }
 
+//Funcion para el test de comandos
 func commandsTest() {
 	commands.FKDisk("disc_2.dsk", 200, 'B', 'L', 'W', "LOGICA6")
 	datos, err := ioutil.ReadFile("disc_2.dsk")
@@ -50,20 +71,4 @@ func commandsTest() {
 		log.Fatal(err)
 	}
 	fmt.Println(datos)
-}
-
-//Funcion para leer los archivos con extension ".mia"
-func readMIAFile(route string) string {
-	var output string
-	file, err := os.Open(route)
-	if err != nil {
-		fmt.Println("Error: El sistema no puede encontrar el archivo especificado.")
-		return output
-	}
-	defer file.Close()
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		output += scanner.Text() + "\n"
-	}
-	return output
 }
