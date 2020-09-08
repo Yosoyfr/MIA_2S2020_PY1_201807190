@@ -21,7 +21,7 @@ import (
 //Funcion Main
 func main() {
 	//interpreterF(readMIAFile("/home/yosoyfr/MIA/test_discos/input.mia"))
-	//interpreterF(readMIAFile("/home/yosoyfr/MIA/test_discos/mkfs.mia"))
+	interpreterF(interpreter.ReadMIAFile("/home/yosoyfr/MIA/discos/input.mia"))
 	//interpreterF("mkfs -id->vda1 -type->fast" + "\n")
 	//interpreterF(interpreter.ReadMIAFile("input.mia"))
 	/*
@@ -42,7 +42,7 @@ func main() {
 
 	//Prueba de leer consola
 	//readConsole()
-	commands.Reports("vda1", "BM_ARBDIR", "/home/yosoyfr/MIA/test_discos/report.pdf", "")
+	//commands.Reports("vda1", "SB", "/home/yosoyfr/MIA/test_discos/txt/report.pdf", "")
 }
 
 func readConsole() {

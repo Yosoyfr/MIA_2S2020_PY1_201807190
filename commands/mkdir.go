@@ -86,12 +86,11 @@ func createAllPath(file *os.File, sb *superBoot, indexSB int64, vdt virtualDirec
 		}
 	} else {
 		//Si no existe creamos ese arbol de directorio
-		//fmt.Println("En el directorio ", string(vdt.DirectoryName[:]))
-		//fmt.Println("Crear subdirectorio:", string(auxVDT[:]))
 		//Recuperamos el bitmap donde sera insertado
 		temp := sb.FirstFreeBitDirectoryTree
 		//Procedemos a construir la estructura padre e hijo de los vdt trabajados
 		buildVDT(file, sb, indexSB, vdt, bm, string(auxVDT[:]))
+		fmt.Println("[-] El directorio \"", string(auxVDT[:]), "\" ha sido creado con exito.")
 		//Recuperamos el ultimo hijo insertado
 		aux := getVirtualDirectotyTree(file, sb.PrDirectoryTree, temp)
 		//Iteramos una vez mas el metodo si el arreglo de carpetas aun contiene datos
@@ -127,6 +126,7 @@ func createPath(file *os.File, sb *superBoot, indexSB int64, vdt virtualDirector
 			vdt, bm = firstAdjustmentPartition(file, sb, vdt, bm)
 			//Procedemos a construir la estructura padre e hijo de los vdt trabajados
 			buildVDT(file, sb, indexSB, vdt, bm, string(auxVDT[:]))
+			fmt.Println("[-] El directorio", string(auxVDT[:]), "ha sido creado con exito.")
 		}
 	}
 }

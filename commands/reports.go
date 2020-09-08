@@ -8,12 +8,16 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
 
 //Funcion manager del tipo de reporte a crear
 func Reports(id string, rep string, path string, route string) {
+	//Carpeta en donde se crear el reporte
+	dir := filepath.Dir(path)
+	createDirectory(dir)
 	//Reportes de bitmaps
 	if strings.HasPrefix(rep, "BM_") {
 		reportBM(id, rep, path, route)
@@ -23,12 +27,16 @@ func Reports(id string, rep string, path string, route string) {
 	var report string
 	switch rep {
 	case "MBR":
+		fmt.Println("[REPORT] Creando reporte de MBR.")
 		report = reportMBR(id)
 	case "DISK":
+		fmt.Println("[REPORT] Creando reporte de DISK.")
 		report = reportDisk(id)
 	case "SB":
+		fmt.Println("[REPORT] Creando reporte de SB.")
 		report = reportSuperBoot(id)
 	case "DIRECTORIO":
+		fmt.Println("[REPORT] Creando reporte de DIRECTORIO.")
 		report = reportVirtualDirectoryTree(id)
 	default:
 		fmt.Println("[ERROR]: El tipo de reporte a crear no existe |", rep, "|.")
@@ -39,6 +47,7 @@ func Reports(id string, rep string, path string, route string) {
 	}
 	extension := path[(len(path) - 3):(len(path))]
 	exec.Command("dot", "-T"+extension, "report.dot", "-o", path).Output()
+	fmt.Println("[REPORT] El reporte fue generado con exito.")
 }
 
 func reportBM(id string, rep string, path string, route string) {
@@ -61,19 +70,19 @@ func reportBM(id string, rep string, path string, route string) {
 	var bitmap []byte
 	switch rep {
 	case "BM_ARBDIR":
-		fmt.Println("Tiene que hacer el reporte de bm arbol directorio")
+		fmt.Println("[BITMAP] Creando reporte de Bitmap de arbol de directorios.")
 		sizeBM := sb.PrDirectoryTree - sb.PrDirectoryTreeBitmap
 		bitmap = getBitmap(file, sb.PrDirectoryTreeBitmap, sizeBM)
 	case "BM_DETDIR":
-		fmt.Println("Tiene que hacer el reporte de bm detalle directorio")
+		fmt.Println("[BITMAP] Creando reporte de Bitmap de detalle de directorios.")
 		sizeBM := sb.PrDirectoryDetail - sb.PrDirectoryDetailBitmap
 		bitmap = getBitmap(file, sb.PrDirectoryDetailBitmap, sizeBM)
 	case "BM_INODE":
-		fmt.Println("Tiene que hacer el reporte de bm inodes")
+		fmt.Println("[BITMAP] Creando reporte de Bitmap de inodos.")
 		sizeBM := sb.PrInodeTable - sb.PrInodeTableBitmap
 		bitmap = getBitmap(file, sb.PrInodeTableBitmap, sizeBM)
 	case "BM_BLOCK":
-		fmt.Println("Tiene que hacer el reporte de bm bloques")
+		fmt.Println("[BITMAP] Creando reporte de Bitmap de bloques.")
 		sizeBM := sb.PrBlocks - sb.PrBlocksBitmap
 		bitmap = getBitmap(file, sb.PrBlocksBitmap, sizeBM)
 	default:
@@ -81,6 +90,7 @@ func reportBM(id string, rep string, path string, route string) {
 	}
 	//Creamos el archivo que representa el reporte de bitmap
 	createReportBM(path, bitmap)
+	fmt.Println("[REPORT] El reporte ha sido generado con exito.")
 }
 
 func reportMBR(id string) string {

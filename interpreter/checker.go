@@ -253,22 +253,21 @@ func controlCommands(command param) {
 		if requiredParameters([]string{"PATH"}, command) != nil {
 			return
 		}
-		ReadMIAFile(command.path)
-		fmt.Println("Hara el exec")
+		input := ReadMIAFile(command.path)
+		CommandChecker(ScanInput(input))
+		fmt.Println("[-] El archivo ha sido ejecutado con exito.")
 	case "PAUSE":
 		systemPaused()
 	case "MKDISK":
 		if requiredParameters([]string{"SIZE", "PATH", "NAME"}, command) != nil {
 			return
 		}
-		//commands.MKDisk(command.path, command.name, command.size, command.unit)
-		fmt.Println("Hara el mkdisk")
+		commands.MKDisk(command.path, command.name, command.size, command.unit)
 	case "RMDISK":
 		if requiredParameters([]string{"PATH"}, command) != nil {
 			return
 		}
-		//commands.RMDisk(command.path)
-		fmt.Println("Hara el rmdisk")
+		commands.RMDisk(command.path)
 	case "FDISK":
 		if command.add != "" && command.delete == "" {
 			fmt.Println("Se hara un add a una particion")
@@ -278,8 +277,7 @@ func controlCommands(command param) {
 			if requiredParameters([]string{"SIZE", "PATH", "NAME"}, command) != nil {
 				return
 			}
-			//commands.FKDisk(command.path, command.size, command.unit, command.Type, command.fit, command.name)
-			fmt.Println("Hara el fdisk")
+			commands.FKDisk(command.path, command.size, command.unit, command.Type, command.fit, command.name)
 		} else {
 			fmt.Println("Error: El comando FDISK proporciona un error en su estructura")
 		}
@@ -290,29 +288,25 @@ func controlCommands(command param) {
 			if requiredParameters([]string{"PATH", "NAME"}, command) != nil {
 				return
 			}
-			//commands.Mount(command.path, command.name)
-			fmt.Println("Hara el mount")
+			commands.Mount(command.path, command.name)
 		}
 	case "UNMOUNT":
 		if requiredParameters([]string{"IDN"}, command) != nil {
 			return
 		}
 		for _, idn := range command.idn {
-			//commands.Unmount(idn)
-			fmt.Println("Hara el unmount", idn)
+			commands.Unmount(idn)
 		}
 	case "MKFS":
 		if requiredParameters([]string{"ID"}, command) != nil {
 			return
 		}
-		fmt.Println("Hara el mkfs")
-		//commands.Mkfs(command.id, "full")
+		commands.Mkfs(command.id, "full")
 	case "MKDIR":
 		if requiredParameters([]string{"ID", "PATH"}, command) != nil {
 			return
 		}
-		fmt.Println("Hara el mkdir")
-		//commands.Mkdir(command.id, command.path, command.pathComplete)
+		commands.Mkdir(command.id, command.path, command.pathComplete)
 	case "MKFILE":
 		if requiredParameters([]string{"ID", "PATH"}, command) != nil {
 			return
@@ -327,7 +321,6 @@ func controlCommands(command param) {
 		if requiredParameters([]string{"NAME", "PATH", "ID"}, command) != nil {
 			return
 		}
-		fmt.Println("Hara un reporte")
 		commands.Reports(command.id, strings.ToUpper(command.name), command.path, command.ruta)
 	}
 }

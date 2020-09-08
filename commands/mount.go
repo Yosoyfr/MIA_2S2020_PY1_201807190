@@ -174,15 +174,15 @@ func ShowMountedDisks() {
 		//Path del disco temporal
 		path := disk.path
 		//Recorremos las particiones de ese disco que han sido montadas
-		for _, part := range disk.parts {
+		for i, part := range disk.parts {
 			partitionType := typeOf(part.partition)
 			switch partitionType {
 			case 0:
 				aux := part.partition.(partition)
-				fmt.Printf("id->%s -path->\"%s\" -name->\"%s\"\n", part.id, path, aux.Name)
+				fmt.Printf("	[%d] id->%s -path->\"%s\" -name->\"%s\"\n", i+1, part.id, path, aux.Name)
 			case 1:
 				aux := part.partition.(extendedBootRecord)
-				fmt.Printf("id->%s -path->\"%s\" -name->\"%s\"\n", part.id, path, aux.Name)
+				fmt.Printf("	[%d] id->%s -path->\"%s\" -name->\"%s\"\n", i+1, part.id, path, aux.Name)
 			}
 		}
 	}
