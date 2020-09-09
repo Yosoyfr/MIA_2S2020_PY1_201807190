@@ -17,6 +17,7 @@ func Mkdir(id string, route string, p bool) {
 		fmt.Println("[ERROR] El path a crear no es valido.")
 		return
 	}
+	//Obtenemos las carpetas
 	folders := strings.Split(route, "/")
 	folders = folders[1:]
 	//Obtenemos la particion a partir del id
@@ -42,12 +43,6 @@ func Mkdir(id string, route string, p bool) {
 	} else {
 		createPath(file, &superboot, indexSB, root, folders, 0)
 	}
-	/*
-		sizeBM := superboot.PrDirectoryTree - superboot.PrDirectoryTreeBitmap
-		fmt.Println(getBitmap(file, superboot.PrDirectoryTreeBitmap, sizeBM))
-		sizeBM = superboot.PrDirectoryDetail - superboot.PrDirectoryDetailBitmap
-		fmt.Println(getBitmap(file, superboot.PrDirectoryDetailBitmap, sizeBM))
-	*/
 	file.Close()
 }
 
@@ -88,6 +83,7 @@ func createAllPath(file *os.File, sb *superBoot, indexSB int64, vdt virtualDirec
 		//Si no existe creamos ese arbol de directorio
 		//Recuperamos el bitmap donde sera insertado
 		temp := sb.FirstFreeBitDirectoryTree
+		vdt, bm = firstFitVDT(file, sb, vdt, bm)
 		//Procedemos a construir la estructura padre e hijo de los vdt trabajados
 		buildVDT(file, sb, indexSB, vdt, bm, string(auxVDT[:]))
 		fmt.Println("[-] El directorio \"", string(auxVDT[:]), "\" ha sido creado con exito.")
@@ -117,13 +113,11 @@ func createPath(file *os.File, sb *superBoot, indexSB int64, vdt virtualDirector
 			createPath(file, sb, indexSB, aux, folders, index)
 		}
 	} else {
-		//Si no existe creamos ese arbol de directorio
-		//fmt.Println("En el directorio ", string(vdt.DirectoryName[:]))
-		//fmt.Println("Crear subdirectorio:", string(auxVDT[:]))
+		//Si no existe nos salta error de que el directorio no existe
 		if len(folders) > 0 {
-			fmt.Println("[ERROR]: El directorio donde se desea crear la carpeta no existe")
+			fmt.Println("[ERROR]: El directorio donde se desea crear la carpeta no existe.")
 		} else {
-			vdt, bm = firstAdjustmentPartition(file, sb, vdt, bm)
+			vdt, bm = firstFitVDT(file, sb, vdt, bm)
 			//Procedemos a construir la estructura padre e hijo de los vdt trabajados
 			buildVDT(file, sb, indexSB, vdt, bm, string(auxVDT[:]))
 			fmt.Println("[-] El directorio", string(auxVDT[:]), "ha sido creado con exito.")
@@ -131,7 +125,8 @@ func createPath(file *os.File, sb *superBoot, indexSB int64, vdt virtualDirector
 	}
 }
 
-func firstAdjustmentPartition(file *os.File, sb *superBoot, vdt virtualDirectoryTree, bm int64) (virtualDirectoryTree, int64) {
+//Obtenemos el directorio donde se va a insertar
+func firstFitVDT(file *os.File, sb *superBoot, vdt virtualDirectoryTree, bm int64) (virtualDirectoryTree, int64) {
 	for i := 0; i < len(vdt.Subdirectories); i++ {
 		if vdt.Subdirectories[i] == -1 {
 			return vdt, bm
@@ -139,7 +134,7 @@ func firstAdjustmentPartition(file *os.File, sb *superBoot, vdt virtualDirectory
 	}
 	if vdt.PrVirtualDirectoryTree != -1 {
 		aux := getVirtualDirectotyTree(file, sb.PrDirectoryTree, vdt.PrVirtualDirectoryTree)
-		return firstAdjustmentPartition(file, sb, aux, vdt.PrVirtualDirectoryTree)
+		return firstFitVDT(file, sb, aux, vdt.PrVirtualDirectoryTree)
 	}
 	return vdt, bm
 }
@@ -159,14 +154,13 @@ func buildVDT(file *os.File, sb *superBoot, indexSB int64, vdt virtualDirectoryT
 	//Insertamos el vdt hijo
 	writeVDT(file, indexNVDT, &newVDT)
 	//Creamos el detalle directorio del nuevo directorio
-	dd := directoryDetail{PrDirectoryDetail: -1}
+	dd := structDD()
 	//Escribimos el arbol virtual de directorio de '/'
 	indexDD := sb.FirstFreeBitDirectoryDetail*sb.SizeDirectoryDetail + sb.PrDirectoryDetail
 	writeDD(file, indexDD, &dd)
 	//Reescribimos el bitmap de detellae de directorio
 	bitMapDD := []byte{'1'}
 	writeBitmap(file, sb.PrDirectoryDetailBitmap+sb.FirstFreeBitDirectoryDetail, bitMapDD)
-
 	//Reescribimos valores del superboot
 	sb.VirtualTreeFree--
 	sb.FirstFreeBitDirectoryTree++
@@ -190,7 +184,9 @@ func createVDT(file *os.File, sb *superBoot, indexSB int64, vdt *virtualDirector
 	}
 	//Si en dado caso no hay espacio para nuevo puntero se crea el puntero indirecto de la carpeta
 	if !created {
+		//Asignamos el nuevo apuntador que sera el indirecto
 		vdt.PrVirtualDirectoryTree = freeBit
+		//Creamos el directorio indirecto
 		indirect := structVDT(vdt.DirectoryName, vdt.PrDirectoryDetail)
 		indirect.CreatedAt = vdt.CreatedAt
 		//Escribimos el apuntador indirecto en el archivo
@@ -226,6 +222,17 @@ func structVDT(name [16]byte, prDD int64) virtualDirectoryTree {
 	}
 	copy(newFolder.CreatedAt[:], timestamp)
 	return newFolder
+}
+
+//Funcion que te devuelve un struct directory detail
+func structDD() directoryDetail {
+	dd := directoryDetail{PrDirectoryDetail: -1}
+	//Creamos un File que vendra con el puntero del inodo en -1 por defecto
+	f := ddFile{PrInode: -1}
+	for i := 0; i < len(dd.Files); i++ {
+		dd.Files[i] = f
+	}
+	return dd
 }
 
 //Funcion para obtener el superbloque de una particion

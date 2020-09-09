@@ -20,29 +20,14 @@ import (
 
 //Funcion Main
 func main() {
-	//interpreterF(readMIAFile("/home/yosoyfr/MIA/test_discos/input.mia"))
-	interpreterF(interpreter.ReadMIAFile("/home/yosoyfr/MIA/discos/input.mia"))
-	//interpreterF("mkfs -id->vda1 -type->fast" + "\n")
-	//interpreterF(interpreter.ReadMIAFile("input.mia"))
-	/*
-		commands.Mkfs("vda1", "fast")
-		fmt.Println("-----------------------")
-		commands.Mkdir("vda1", "/home/yosoyfr/Descargas", true)
-		//commands.Mkdir("vda1", "/home/yosoyfr/Escritorio", true)
-		commands.Mkdir("vda1", "/media", true)
-		commands.Mkdir("vda1", "/log", true)
-		commands.Mkdir("vda1", "/bin", true)
-		commands.Mkdir("vda1", "/opt", true)
-		commands.Mkdir("vda1", "/proc", true)
-		commands.Mkdir("vda1", "/etc/usr", true)
-		commands.Mkdir("vda1", "/dev", false)
-		commands.Reports("vda1", "directorio", "/home/yosoyfr/MIA/test_discos/directorio.pdf")
-		commands.Reports("vda1", "sb", "/home/yosoyfr/MIA/test_discos/report.pdf")
-	*/
-
+	//interpreterF(interpreter.ReadMIAFile("/home/yosoyfr/MIA/test_discos/input.mia"))
+	//interpreterF(interpreter.ReadMIAFile("/home/yosoyfr/MIA/discos/input.mia"))
 	//Prueba de leer consola
 	//readConsole()
-	//commands.Reports("vda1", "SB", "/home/yosoyfr/MIA/test_discos/txt/report.pdf", "")
+	//inp := "Francisco Luis Suarez Lopez, Mara Isabel Lopez Garcia, Heather Gabriela Paz Lopez, Amanda Garcia de Lopez, Luis Antonio Suarez Roldan, Francisco Luis Lopez Smith, Luis Rolando Lopez Garcia, Amanda Argentina Lopez Garcia, Mario Rene Lopez Garcia, Carlos Luis Mendez Lopez, Mario Samuel Lopez Aldana, Peggy Lily Lopez Aldana"
+	commands.Mount("/home/yosoyfr/MIA/discos/Disco1.dsk", "Particion1")
+	commands.Mkfile("vda1", "/home/user/docs/caca.txt", false, 0, "puta")
+	commands.Reports("vda1", "SB", "/home/yosoyfr/MIA/discos/report.pdf", "")
 }
 
 func readConsole() {

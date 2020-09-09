@@ -270,6 +270,15 @@ func writeInode(file *os.File, index int64, inode *iNode) {
 	writeNextBytes(file, binaryDisc.Bytes())
 }
 
+//Funcion para escribir en el archivo la estructura de un i-nodo
+func writeBlock(file *os.File, index int64, data *dataBlock) {
+	file.Seek(index, 0)
+	//Empezamos el proceso de guardar en binario la data en memoria del struct
+	var binaryDisc bytes.Buffer
+	binary.Write(&binaryDisc, binary.BigEndian, data)
+	writeNextBytes(file, binaryDisc.Bytes())
+}
+
 /*
 	Funciones para obtener estructuras en el disco
 */

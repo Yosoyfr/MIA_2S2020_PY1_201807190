@@ -40,6 +40,7 @@ func Reports(id string, rep string, path string, route string) {
 		report = reportVirtualDirectoryTree(id)
 	default:
 		fmt.Println("[ERROR]: El tipo de reporte a crear no existe |", rep, "|.")
+		return
 	}
 	err := ioutil.WriteFile("report.dot", []byte(report), 0644)
 	if err != nil {
