@@ -43,7 +43,12 @@ func Mkfile(id string, route string, p bool, size int64, txt string) {
 	}
 	//De lo contrario tendra que existir ya el directorio completo
 	//Procedemos a obtener el puntero del DD del directorio
-	index := existDetailDirectory(file, &sb, root, folders, 0)
+	var index int64
+	if len(folders) > 0 {
+		index = existDetailDirectory(file, &sb, root, folders, 0)
+	} else {
+		index = root.PrDirectoryDetail
+	}
 	if index == -1 {
 		fmt.Println("[ERROR]: El directorio donde se desea crear el archivo no existe.")
 		return

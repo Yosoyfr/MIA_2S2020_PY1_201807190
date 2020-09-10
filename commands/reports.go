@@ -372,7 +372,7 @@ func searchPartition(id string) (string, mountedParts, error) {
 }
 
 func reportSuperBoot(id string) string {
-	var dot string = "digraph REP_SB{\nrankdir = LR;\n node [shape=plain, fontsize=20];\n graph[dpi=120];\n\n"
+	var dot string = "digraph REP_SB{\nrankdir = LR;\n node [shape=plain, fontsize=20];\n\n"
 	//Superboot a trabajar
 	superboot := superBoot{}
 	//Obtenemos el file y la particion a trabajar
@@ -516,34 +516,10 @@ func reportVirtualDirectoryTree(id string) string {
 	return dot
 }
 
+//Modelo de un arbol de directorio virtual completo
 func vdtModel(file *os.File, sb superBoot, index int64) string {
-	dot := "N"
-	dot += strconv.FormatInt(index, 10)
-	dot += "[color=\"#99ccff\"  label=<\n"
-	dot += "<table border=\"0\" cellborder=\"1\" cellpadding=\"10\">\n"
 	vdt := getVirtualDirectotyTree(file, sb.PrDirectoryTree, index)
-	dot += "\t<tr><td bgcolor=\"#99ccff\" colspan=\"2\" PORT=\"0\">"
-	dot += strings.Replace(string(vdt.DirectoryName[:]), "\x00", "", -1)
-	dot += "</td></tr>\n"
-	//Subdirectorios
-	for i := 0; i < len(vdt.Subdirectories); i++ {
-		dot += "\t<tr><td>aptr"
-		dot += strconv.Itoa(i + 1)
-		dot += "</td><td PORT=\""
-		dot += strconv.Itoa(i + 1)
-		dot += "\">"
-		dot += strconv.FormatInt(vdt.Subdirectories[i], 10)
-		dot += "</td></tr>\n"
-	}
-	//Detalle de directorio
-	dot += "\t<tr><td bgcolor=\"#7ab648\" PORT=\"7\">detalle_D</td><td>"
-	dot += strconv.FormatInt(vdt.PrDirectoryDetail, 10)
-	dot += "</td></tr>\n"
-	//Apuntador indirecto
-	dot += "\t<tr><td bgcolor=\"#99ccff\" PORT=\"8\">aptr_ind</td><td>"
-	dot += strconv.FormatInt(vdt.PrVirtualDirectoryTree, 10)
-	dot += "</td></tr>\n"
-	dot += "</table>\n>];"
+	dot := vdtTable(vdt, index)
 	//Creamos los subdirecotrios
 	for i := 0; i < len(vdt.Subdirectories); i++ {
 		if vdt.Subdirectories[i] != -1 {
@@ -566,6 +542,175 @@ func vdtModel(file *os.File, sb superBoot, index int64) string {
 		dot += strconv.FormatInt(vdt.PrVirtualDirectoryTree, 10)
 		dot += ":0;\n"
 	}
+	return dot
+}
+
+//Reporte de arbol virtual de directorio
+func ReportDirectoryTree(id string, path string) string {
+	//Revismos que la ruta a insertar sea correcta
+	if path[0] != '/' {
+		fmt.Println("[ERROR] El path no es valido.")
+		return ""
+	} //Obtenemos las carpetas
+	folders := strings.Split(path, "/")
+	folders = folders[1:]
+	var dot string = "digraph REP_SB{\nrankdir = LR;\n node [shape=plain, fontsize=20];\n ranksep = 2;\n\n"
+	//Superboot a trabajar
+	sb := superBoot{}
+	//Obtenemos el file y la particion a trabajar
+	diskPath, mountedPart, err := searchPartition(id)
+	if err != nil {
+		return ""
+	}
+	file, _, err := readFile(diskPath)
+	if err != nil {
+		return ""
+	}
+	//Definimos el tipo de particion que es
+	indexSB, _ := getPartitionType(mountedPart)
+	//Recuperamos el superbloque de la particion
+	sb = getSB(file, indexSB)
+	//Recuperamos el arbol de directorio de '/'
+	root := getVirtualDirectotyTree(file, sb.PrDirectoryTree, 0)
+	//Empezamos a escribir el reporte
+	var index int64
+	var aux string
+	var foldername [16]byte
+	var pr int64
+	//Obtenemos la raiz
+	dot += vdtTable(root, 0)
+	//Si existe mas subdirectorios realizamos la iteracion o en dado caso es el detalle de la raiz '/'
+	if len(folders) > 0 {
+		index, aux, foldername, pr = directoryTreeModel(file, &sb, root, folders, 0)
+	} else {
+		index, aux, foldername, pr = root.PrDirectoryDetail, "", root.DirectoryName, 0
+	}
+	//Obtenido el indice del detalle de directorio procedemos a crear su grafico
+	if index != -1 {
+		//Se incluyen los subdirectorios, si es que lo habian
+		dot += aux
+		//Se crea el grafico de la estructura
+		dot += ddModel(file, sb, index, foldername)
+		//Asignamos el detalle de directorio
+		dot += "N"
+		dot += strconv.FormatInt(pr, 10)
+		dot += ":7"
+		dot += " -> D"
+		dot += strconv.FormatInt(index, 10)
+		dot += ":0;\n"
+	}
+	dot += "}"
+	file.Close()
+	fmt.Println(dot)
+	return dot
+}
+
+//Funcion que te devuelve una tabla que representa la estructura de un vdt
+func vdtTable(vdt virtualDirectoryTree, bm int64) string {
+	dot := "N"
+	dot += strconv.FormatInt(bm, 10)
+	dot += "[color=\"#99ccff\"  label=<\n"
+	dot += "<table border=\"0\" cellborder=\"1\" cellpadding=\"10\">\n"
+	dot += "\t<tr><td bgcolor=\"#99ccff\" colspan=\"2\" PORT=\"0\">"
+	dot += strings.Replace(string(vdt.DirectoryName[:]), "\x00", "", -1)
+	dot += "</td></tr>\n"
+	//Subdirectorios
+	for i := 0; i < len(vdt.Subdirectories); i++ {
+		dot += "\t<tr><td>aptr"
+		dot += strconv.Itoa(i + 1)
+		dot += "</td><td PORT=\""
+		dot += strconv.Itoa(i + 1)
+		dot += "\">"
+		dot += strconv.FormatInt(vdt.Subdirectories[i], 10)
+		dot += "</td></tr>\n"
+	}
+	//Detalle de directorio
+	dot += "\t<tr><td bgcolor=\"#7ab648\">detalle_D</td><td PORT=\"7\">"
+	dot += strconv.FormatInt(vdt.PrDirectoryDetail, 10)
+	dot += "</td></tr>\n"
+	//Apuntador indirecto
+	dot += "\t<tr><td bgcolor=\"#99ccff\">aptr_ind</td><td PORT=\"8\">"
+	dot += strconv.FormatInt(vdt.PrVirtualDirectoryTree, 10)
+	dot += "</td></tr>\n"
+	dot += "</table>\n>];\n"
+	return dot
+}
+
+//Funcion del modelo treeFile
+func directoryTreeModel(file *os.File, sb *superBoot, vdt virtualDirectoryTree, folders []string, bm int64) (int64, string, [16]byte, int64) {
+	//Casteamos el nombre del VDT
+	var auxVDT [16]byte
+	copy(auxVDT[:], folders[0])
+	//Lo quitamos de la lista de carpetas
+	folders = folders[1:]
+	//Identificamos el puntero de la carpeta a buscar
+	index := existPath(file, sb, vdt, auxVDT)
+	if index != -1 {
+		//Obtenemos el vdt de ese puntero
+		aux := getVirtualDirectotyTree(file, sb.PrDirectoryTree, index)
+		//Iteramos una vez mas el metodo si el arreglo de carpetas aun contiene datos
+		dot := vdtTable(aux, index)
+		for i := 0; i < len(vdt.Subdirectories); i++ {
+			if vdt.Subdirectories[i] != -1 && vdt.Subdirectories[i] == index {
+				dot += "N"
+				dot += strconv.FormatInt(bm, 10)
+				dot += ":"
+				dot += strconv.Itoa(i + 1)
+				dot += " -> N"
+				dot += strconv.FormatInt(vdt.Subdirectories[i], 10)
+				dot += ":0;\n"
+			}
+		}
+		if len(folders) > 0 {
+			j, g, a, inx := directoryTreeModel(file, sb, aux, folders, index)
+			dot += g
+			return j, dot, a, inx
+		}
+		return aux.PrDirectoryDetail, dot, auxVDT, index
+	}
+	return -1, "", [16]byte{}, -1
+}
+
+//Funcion que genera la estructura de todo un detalle de directorio de una directorio
+func ddModel(file *os.File, sb superBoot, index int64, foldername [16]byte) string {
+	dot := "D"
+	dot += strconv.FormatInt(index, 10)
+	dot += "[color=\"#7ab648\"  label=<\n"
+	dot += "<table border=\"0\" cellborder=\"1\" cellpadding=\"10\">\n"
+	dd := getDirectotyDetail(file, sb.PrDirectoryDetail, index)
+	dot += "\t<tr><td bgcolor=\"#7ab648\" colspan=\"2\" PORT=\"0\">"
+	dot += "DD: " + strings.Replace(string(foldername[:]), "\x00", "", -1)
+	dot += "</td></tr>\n"
+	//Archivos contenidos en el directo
+	for i := 0; i < len(dd.Files); i++ {
+		dot += "\t<tr><td>"
+		name := strings.Replace(string(dd.Files[i].Name[:]), "\x00", "", -1)
+		if name != "" {
+			dot += name
+		} else {
+			dot += "----------"
+		}
+		dot += "</td><td PORT=\""
+		dot += strconv.Itoa(i + 1)
+		dot += "\">"
+		dot += strconv.FormatInt(dd.Files[i].PrInode, 10)
+		dot += "</td></tr>\n"
+	}
+	//Apuntador indirecto
+	dot += "\t<tr><td bgcolor=\"#fcc438\">aptr_ind</td><td  PORT=\"6\">"
+	dot += strconv.FormatInt(dd.PrDirectoryDetail, 10)
+	dot += "</td></tr>\n"
+	dot += "</table>\n>];\n"
+	//Creamos el indirecto si es que existe
+	if dd.PrDirectoryDetail != -1 {
+		dot += ddModel(file, sb, dd.PrDirectoryDetail, foldername)
+		dot += "D"
+		dot += strconv.FormatInt(index, 10)
+		dot += ":6-> D"
+		dot += strconv.FormatInt(dd.PrDirectoryDetail, 10)
+		dot += ":0;\n"
+	}
+
 	return dot
 }
 
