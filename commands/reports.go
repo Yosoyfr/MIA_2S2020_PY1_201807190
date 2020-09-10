@@ -23,26 +23,57 @@ func Reports(id string, rep string, path string, route string) {
 		reportBM(id, rep, path, route)
 		return
 	}
+		//Superboot a trabajar
+	sb := superBoot{}
+	//Obtenemos el file y la particion a trabajar
+	diskPath, mountedPart, err := searchPartition(id)
+	if err != nil {
+		return 
+	}
+	file, mbr, err := readFile(diskPath)
+	if err != nil {
+		return 
+	}
+	//Definimos el tipo de particion que es
+	indexSB, name := getPartitionType(mountedPart)
+	//Recuperamos el superbloque de la particion
+	sb = getSB(file, indexSB)
 	//Reportes con GRAPHVIZ
 	var report string
 	switch rep {
 	case "MBR":
 		fmt.Println("[REPORT] Creando reporte de MBR.")
-		report = reportMBR(id)
+		report = reportMBR(file, mbr)
 	case "DISK":
 		fmt.Println("[REPORT] Creando reporte de DISK.")
-		report = reportDisk(id)
+		report = reportDisk(file, mbr)
 	case "SB":
 		fmt.Println("[REPORT] Creando reporte de SB.")
-		report = reportSuperBoot(id)
+		report = reportSuperBoot(file, mountedPart, sb, name)
 	case "DIRECTORIO":
 		fmt.Println("[REPORT] Creando reporte de DIRECTORIO.")
-		report = reportVirtualDirectoryTree(id)
+		report = reportVirtualDirectoryTree(file, sb)
+	case "TREE_DIRECTORIO":
+		if len(route) == 0 {
+			fmt.Println("[ERROR]: Necesita especificar una ruta para crear el reporte.")
+		} else {
+			fmt.Println("[REPORT] Creando reporte de TREE_DIRECTORIO.")
+			report = reportDirectoryTree(file, sb, route)
+		}
+	case "TREE_FILE":
+		if len(route) == 0 {
+			fmt.Println("[ERROR]: Necesita especificar una ruta para crear el reporte.")
+		} else {
+			fmt.Println("[REPORT] Creando reporte de TREE_FILE.")
+			report = reportTreeFile(file, sb, route)
+		}
 	default:
 		fmt.Println("[ERROR]: El tipo de reporte a crear no existe |", rep, "|.")
+		file.Close()
 		return
 	}
-	err := ioutil.WriteFile("report.dot", []byte(report), 0644)
+	file.Close()
+	err = ioutil.WriteFile("report.dot", []byte(report), 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -94,17 +125,7 @@ func reportBM(id string, rep string, path string, route string) {
 	fmt.Println("[REPORT] El reporte ha sido generado con exito.")
 }
 
-func reportMBR(id string) string {
-	//Obtenemos el file y la particion a trabajar
-	path, _, err := searchPartition(id)
-	if err != nil {
-		return ""
-	}
-	//Obtenemos el mbr del disco
-	file, mbr, err := readFile(path)
-	if err != nil {
-		return ""
-	}
+func reportMBR(file *os.File, mbr masterBootRecord) string {
 	//Variable que concatenara todas las sentencias en lenguaje DOT para crear el reporte con GRAPHVIZ
 	var dot string = "digraph REP_MBR{\n"
 	//Variable que almacenara temporalmente la posicion de la particion extendida
@@ -218,17 +239,7 @@ func reportMBR(id string) string {
 	return dot
 }
 
-func reportDisk(id string) string {
-	//Obtenemos el file y la particion a trabajar
-	path, _, err := searchPartition(id)
-	if err != nil {
-		return ""
-	}
-	//Obtenemos el mbr del disco
-	file, mbr, err := readFile(path)
-	if err != nil {
-		return ""
-	}
+func reportDisk(file *os.File, mbr masterBootRecord) string {
 	//Variable que concatenara todas las sentencias en lenguaje DOT para crear el reporte con GRAPHVIZ
 	var dot string = "digraph REP_DISK{\n"
 	dot += "DISC[\nshape=box\nlabel=<\n"
@@ -371,23 +382,8 @@ func searchPartition(id string) (string, mountedParts, error) {
 	return mountedDisk.path, mountedPartition, nil
 }
 
-func reportSuperBoot(id string) string {
+func reportSuperBoot(file *os.File, mountedPart mountedParts, superboot superBoot, name string, ) string {
 	var dot string = "digraph REP_SB{\nrankdir = LR;\n node [shape=plain, fontsize=20];\n\n"
-	//Superboot a trabajar
-	superboot := superBoot{}
-	//Obtenemos el file y la particion a trabajar
-	diskPath, mountedPart, err := searchPartition(id)
-	if err != nil {
-		return ""
-	}
-	file, _, err := readFile(diskPath)
-	if err != nil {
-		return ""
-	}
-	//Definimos el tipo de particion que es
-	indexSB, name := getPartitionType(mountedPart)
-	//Recuperamos el superbloque de la particion
-	superboot = getSB(file, indexSB)
 	//Empezamos a escribir el reporte
 	dot += "Node0 [label=<\n"
 	dot += "<table border=\"0\" cellborder=\"1\" cellpadding=\"8\">\n"
@@ -486,33 +482,15 @@ func reportSuperBoot(id string) string {
 	dot += "</td></tr>\n"
 	dot += "</table>\n>];\n"
 	dot += "}"
-	file.Close()
 	return dot
 }
 
 //Reporte de arbol virtual de directorio
-func reportVirtualDirectoryTree(id string) string {
+func reportVirtualDirectoryTree(file *os.File, sb superBoot) string {
 	var dot string = "digraph REP_SB{\nrankdir = LR;\n node [shape=plain, fontsize=20];\n ranksep = 2;\n\n"
-	//Superboot a trabajar
-	sb := superBoot{}
-	//Obtenemos el file y la particion a trabajar
-	diskPath, mountedPart, err := searchPartition(id)
-	if err != nil {
-		return ""
-	}
-	file, _, err := readFile(diskPath)
-	if err != nil {
-		return ""
-	}
-	//Definimos el tipo de particion que es
-	indexSB, _ := getPartitionType(mountedPart)
-	//Recuperamos el superbloque de la particion
-	sb = getSB(file, indexSB)
 	//Empezamos a escribir el reporte
-	//fmt.Println(sb, name)
 	dot += vdtModel(file, sb, 0)
 	dot += "}"
-	file.Close()
 	return dot
 }
 
@@ -545,42 +523,36 @@ func vdtModel(file *os.File, sb superBoot, index int64) string {
 	return dot
 }
 
-//Reporte de arbol virtual de directorio
-func ReportDirectoryTree(id string, path string) string {
+//Reporte de arbol de directorio que muestra su detalle del directorio
+func reportDirectoryTree(file *os.File, sb superBoot, path string) string {
 	//Revismos que la ruta a insertar sea correcta
 	if path[0] != '/' {
 		fmt.Println("[ERROR] El path no es valido.")
 		return ""
-	} //Obtenemos las carpetas
+	} 
+	//Obtenemos las carpetas
 	folders := strings.Split(path, "/")
 	folders = folders[1:]
-	var dot string = "digraph REP_SB{\nrankdir = LR;\n node [shape=plain, fontsize=20];\n ranksep = 2;\n\n"
-	//Superboot a trabajar
-	sb := superBoot{}
-	//Obtenemos el file y la particion a trabajar
-	diskPath, mountedPart, err := searchPartition(id)
-	if err != nil {
-		return ""
-	}
-	file, _, err := readFile(diskPath)
-	if err != nil {
-		return ""
-	}
-	//Definimos el tipo de particion que es
-	indexSB, _ := getPartitionType(mountedPart)
-	//Recuperamos el superbloque de la particion
-	sb = getSB(file, indexSB)
+	var dot string = "digraph REP_TREEDIRECTORY{\nrankdir = LR;\n node [shape=plain, fontsize=20];\n ranksep = 2;\n\n"
 	//Recuperamos el arbol de directorio de '/'
 	root := getVirtualDirectotyTree(file, sb.PrDirectoryTree, 0)
 	//Empezamos a escribir el reporte
+	aux, _ := buildDirectoryTree(file, sb, root, folders)
+	dot += aux
+	dot += "}"
+	return dot
+}
+
+//Funcion que construye el arbol de directorio con su detalle de directorio
+func buildDirectoryTree(file *os.File, sb superBoot, root virtualDirectoryTree, folders []string) (string, int64) {
 	var index int64
 	var aux string
 	var foldername [16]byte
 	var pr int64
 	//Obtenemos la raiz
-	dot += vdtTable(root, 0)
+	dot := vdtTable(root, 0)
 	//Si existe mas subdirectorios realizamos la iteracion o en dado caso es el detalle de la raiz '/'
-	if len(folders) > 0 {
+	if len(folders) > 0 && folders[0] != "" {
 		index, aux, foldername, pr = directoryTreeModel(file, &sb, root, folders, 0)
 	} else {
 		index, aux, foldername, pr = root.PrDirectoryDetail, "", root.DirectoryName, 0
@@ -599,10 +571,7 @@ func ReportDirectoryTree(id string, path string) string {
 		dot += strconv.FormatInt(index, 10)
 		dot += ":0;\n"
 	}
-	dot += "}"
-	file.Close()
-	fmt.Println(dot)
-	return dot
+	return dot, index
 }
 
 //Funcion que te devuelve una tabla que representa la estructura de un vdt
@@ -712,6 +681,58 @@ func ddModel(file *os.File, sb superBoot, index int64, foldername [16]byte) stri
 	}
 
 	return dot
+}
+
+//Reporte del arbol de directorio donde este contenido en su detalle cierto archivo y que muestra los inodos que lo representan y su contenido en bloques
+func reportTreeFile(file *os.File, sb superBoot, path string) string {
+	//Revismos que la ruta a insertar sea correcta
+	if path[0] != '/' {
+		fmt.Println("[ERROR] El path no es valido.")
+		return ""
+	} 
+	//Obtenemos las carpetas
+	folders := strings.Split(path, "/")
+	folders = folders[1:]
+	//Obtenemos el nombre del archivo a representar
+	if !strings.HasSuffix(strings.ToLower(folders[len(folders)-1]), ".txt") {
+		fmt.Println("[ERROR] El file a buscar no es valido.")
+		return ""
+	}
+	var filename [16]byte
+	copy(filename[:], folders[len(folders)-1])
+	folders = folders[:len(folders)-1]
+	//Empezamos a escribir el reporte
+	var dot string = "digraph REP_TREEFILE{\nrankdir = LR;\n node [shape=plain, fontsize=20];\n ranksep = 2;\n\n"
+	//Recuperamos el arbol de directorio de '/'
+	root := getVirtualDirectotyTree(file, sb.PrDirectoryTree, 0)
+	//Construimos el arbol de directorio y su detalle
+	aux, bm := buildDirectoryTree(file, sb, root, folders)
+	dot += aux
+	//[-] Construimos los inodos
+	//Obtenemos el detalle de directorio
+	dd := getDirectotyDetail(file, sb.PrDirectoryDetail, bm)
+	//Recuperamos el puntero del inodo donde se encuentra el archivo
+	nInode := searchFile(file, sb, dd, filename)
+	if nInode != -1 {
+		fmt.Println(nInode)
+	}
+	dot += "}"
+	
+	return dot
+}
+
+//Funcion que recorre todo el detalle de directorio para encontrar un archivo
+func searchFile(file *os.File, sb superBoot, dd directoryDetail, filename [16]byte) int64 {
+	for i := 0; i < len(dd.Files); i++ {
+		if dd.Files[i].Name == filename {
+			return dd.Files[i].PrInode
+		}
+	}
+	if dd.PrDirectoryDetail != -1 {
+		aux := getDirectotyDetail(file, sb.PrDirectoryDetail, dd.PrDirectoryDetail)
+		return searchFile(file, sb, aux, filename)
+	}
+	return -1
 }
 
 //Funcion para crear reportes de bitmaps

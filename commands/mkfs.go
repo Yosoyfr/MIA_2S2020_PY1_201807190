@@ -134,7 +134,7 @@ func Mkfs(idPart string, Type string) {
 		partitionStart = primaryPartition.Start
 		partitionName = strings.Replace(string(primaryPartition.Name[:]), "\x00", "", -1)
 	} else { //Trabajos con la particion logica
-		partitionSize = logicalPartition.Size
+		partitionSize = logicalPartition.Size - int64(binary.Size(extendedBootRecord{}))
 		partitionStart = logicalPartition.Start
 		partitionName = strings.Replace(string(logicalPartition.Name[:]), "\x00", "", -1)
 	}

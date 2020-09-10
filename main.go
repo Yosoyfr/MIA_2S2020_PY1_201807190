@@ -26,9 +26,13 @@ func main() {
 	//readConsole()
 	//inp := "Francisco Luis Suarez Lopez, Mara Isabel Lopez Garcia, Heather Gabriela Paz Lopez, Amanda Garcia de Lopez, Luis Antonio Suarez Roldan, Francisco Luis Lopez Smith, Luis Rolando Lopez Garcia, Amanda Argentina Lopez Garcia, Mario Rene Lopez Garcia, Carlos Luis Mendez Lopez, Mario Samuel Lopez Aldana, Peggy Lily Lopez Aldana"
 	commands.Mount("/home/yosoyfr/MIA/discos/Disco1.dsk", "Particion1")
-	//commands.Mkfile("vda1", "/home/user/docs/caca.txt", false, 0, "puta")
-	commands.Reports("vda1", "DIRECTORIO", "/home/yosoyfr/MIA/discos/directorio.pdf", "")
-	commands.ReportDirectoryTree("vda1", "/bin")
+	//commands.Mkfile("vda1", "/home/user/docs/jjaa.txt", false, 0, "alv")
+	//commands.Reports("vda1", "DIRECTORIO", "/home/yosoyfr/MIA/discos/directorio.pdf", "")
+	//commands.Reports("vda1", "SB", "/home/yosoyfr/MIA/discos/sb.pdf", "")
+	commands.Reports("vda1", "TREE_FILE", "/home/yosoyfr/MIA/discos/tree_file.pdf", "/home/user/docs/p.txt")
+	//commands.Reports("vda1", "TREE_DIRECTORIO", "/home/yosoyfr/MIA/discos/tree_dir.pdf", "/home/user/docs")
+	//commands.Reports("vda1", "DISK", "/home/yosoyfr/MIA/discos/disk.pdf", "")
+	//commands.Reports("vda1", "MBR", "/home/yosoyfr/MIA/discos/mbr.pdf", "")
 }
 
 func readConsole() {
