@@ -66,7 +66,7 @@ P: Particion Primaria
 E: Particion Extendida
 L: Particoin Logica
 */
-func FKDisk(path string, size int64, unit byte, typeF byte, fit byte, name string) {
+func FDisk(path string, size int64, unit byte, typeF byte, fit byte, name string) {
 	//Obtenemos el mbr del disco
 	file, mbr, err := readFile(path)
 	defer file.Close()
@@ -82,7 +82,7 @@ func FKDisk(path string, size int64, unit byte, typeF byte, fit byte, name strin
 		4.Si se desea crear una particion logica, debe existir una particion extendida
 		5.Debe existir un IDENTIFICADOR unico para cada particion
 	*/
-	//	Obtenemos el nombre a asignar
+	// Obtenemos el nombre a asignar
 	var newName [16]byte
 	copy(newName[:], name)
 	// Obtenemos el tamaño disponible
@@ -161,7 +161,6 @@ func FKDisk(path string, size int64, unit byte, typeF byte, fit byte, name strin
 			var binaryDisk bytes.Buffer
 			binary.Write(&binaryDisk, binary.BigEndian, &prevEBR)
 			writeNextBytes(file, binaryDisk.Bytes())
-
 		} else {
 			//Buscamos el ultimo insertado para editarlo
 			for prevEBR.Next != -1 {
@@ -266,6 +265,53 @@ func FKDisk(path string, size int64, unit byte, typeF byte, fit byte, name strin
 	fmt.Println("[-] La particion ha sido creada con exito.")
 }
 
+//Funcion para eliminar particiones
+func FDiskDelete(path string, delete string, name string) {
+	//Obtenemos el mbr del disco
+	file, mbr, err := readFile(path)
+	if err != nil {
+		return
+	}
+	// Obtenemos el nombre de la particion a buscar
+	var findname [16]byte
+	copy(findname[:], name)
+	//Recorremos todos las particiones creadas
+	for _, part := range mbr.Partitions {
+		//En dado caso la particion se encuentra entre las primarias y la extendida
+		if part.Name == findname {
+			//mbr.Partitions[i] = partition{}
+			fmt.Println("Encontrado xd", part.Start)
+			break
+		}
+		//Si en dado la particion se encuentra entre las logicas
+		if part.Type == 'E' {
+			//Recorreremos los ebr
+			ebr := extendedBootRecord{}
+			prev := extendedBootRecord{}
+			index := part.Start
+			for ebr.Next != -1 {
+				//Recuperamos el ebr que vamos analizar
+				ebr = getEBR(file, index)
+				if ebr.Name == findname {
+					fmt.Println("Encontrado xd", ebr.Start)
+					//Le cambiamos el apuntador del siquiente al anterior
+					prev.Next = ebr.Next
+					break
+				}
+				prev = ebr
+				index = ebr.Next
+			}
+			//Verificamos cual es el anterior a editar
+			if index != part.Start {
+				fmt.Println(prev)
+			} else {
+				fmt.Println("Es el inicial")
+			}
+		}
+	}
+	file.Close()
+}
+
 //Funcion para calcular el valor de un tamaño a partir de la unidad definida
 func unitCalc(size int64, unit byte) (int64, error) {
 	switch unit {
@@ -277,4 +323,29 @@ func unitCalc(size int64, unit byte) (int64, error) {
 		return 1024 * 1024 * size, nil
 	}
 	return 0, fmt.Errorf("ERROR")
+}
+
+//Funcion para recuperar un ebr
+func getEBR(file *os.File, index int64) extendedBootRecord {
+	ebr := extendedBootRecord{}
+	size := int64(binary.Size(ebr))
+	file.Seek(index, 0)
+	//Se obtiene la data del archivo binarios
+	data := readNextBytes(file, size)
+	buffer := bytes.NewBuffer(data)
+	//Se asigna al mbr declarado para leer la informacion de ese disco
+	err := binary.Read(buffer, binary.BigEndian, &ebr)
+	if err != nil {
+		log.Fatal("binary.Read failed", err)
+	}
+	return ebr
+}
+
+//Funcion para escribir en el archivo la estructura de un i-nodo
+func writeEBR(file *os.File, index int64, ebr *extendedBootRecord) {
+	file.Seek(index, 0)
+	//Empezamos el proceso de guardar en binario la data en memoria del struct
+	var binaryDisc bytes.Buffer
+	binary.Write(&binaryDisc, binary.BigEndian, ebr)
+	writeNextBytes(file, binaryDisc.Bytes())
 }

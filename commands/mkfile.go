@@ -7,6 +7,30 @@ import (
 	"time"
 )
 
+//Funcion que calcula el volumen de la cadena de texto con respecto al tamaño o si no llena con el abecedario
+func setTXT(size int64, txt string) string {
+	sizeTxt := int64(len(txt))
+	if size == 0 && sizeTxt != 0 {
+		return txt
+	}
+	if size == sizeTxt {
+		return txt
+	} else if size < sizeTxt {
+		txt = txt[:size]
+		return txt
+	} else {
+		aux, j := int(size-sizeTxt), 0
+		for i := 0; i < aux; i++ {
+			txt += string(65 + j)
+			j++
+			if j == 26 {
+				j = 0
+			}
+		}
+		return txt
+	}
+}
+
 //Funcion MKFILE para la creacion de archivos txt en los detalles de directorio
 func Mkfile(id string, route string, p bool, size int64, txt string) {
 	//Revismos que la ruta a insertar sea correcta
@@ -38,7 +62,7 @@ func Mkfile(id string, route string, p bool, size int64, txt string) {
 	//Recuperamos el arbol de directorio de '/'
 	root := getVirtualDirectotyTree(file, sb.PrDirectoryTree, 0)
 	//Si el comando requiere que creemos todo el directorio donde estara el archivo
-	if p {
+	if p && len(folders) > 0 {
 		createAllPath(file, &sb, indexSB, root, folders, 0)
 	}
 	//De lo contrario tendra que existir ya el directorio completo
@@ -75,6 +99,7 @@ func Mkfile(id string, route string, p bool, size int64, txt string) {
 	//Reescribimos el superboot
 	writeSB(file, indexSB, &sb)
 	file.Close()
+	fmt.Println("[-] El archivo \"", route, "\" ha sido creado con exito.")
 }
 
 func buildInodes(file *os.File, sb *superBoot, inode iNode, arrDB []dataBlock) {

@@ -21,19 +21,10 @@ import (
 //Funcion Main
 func main() {
 	//interpreterF(interpreter.ReadMIAFile("/home/yosoyfr/MIA/test_discos/input.mia"))
-	interpreterF(interpreter.ReadMIAFile("/home/yosoyfr/MIA/discos/input.mia"))
+	//interpreterF(interpreter.ReadMIAFile("/home/yosoyfr/MIA/discos/input.mia"))
 	//Prueba de leer consola
 	//readConsole()
-	//commands.Mount("/home/yosoyfr/MIA/discos/Disco1.dsk", "Particion1")
-	//commands.Mkfile("vda1", "/t6.txt", false, 0, "test")
-	//commands.Mkfile("vda1", "/home/user/docs/Hola.txt", false, 0, "Hola")
-	//commands.Reports("vda1", "DIRECTORIO", "/home/yosoyfr/MIA/discos/directorio.pdf", "")
-	//commands.Reports("vda1", "SB", "/home/yosoyfr/MIA/discos/sb.pdf", "")
-	//commands.Reports("vda1", "TREE_FILE", "/home/yosoyfr/MIA/discos/tree_file.pdf", "/cartasuicidio.txt")
-	//commands.Reports("vda1", "TREE_DIRECTORIO", "/home/yosoyfr/MIA/discos/tree_dir.pdf", "/")
-	//commands.Reports("vda1", "TREE_COMPLETE", "/home/yosoyfr/MIA/discos/tree_complete.pdf", "")
-	//commands.Reports("vda1", "DISK", "/home/yosoyfr/MIA/discos/disk.pdf", "")
-	//commands.Reports("vda1", "MBR", "/home/yosoyfr/MIA/discos/mbr.pdf", "")
+	commands.FDiskDelete("/home/yosoyfr/MIA/discos/Disco1.dsk", "fast", "Logica3")
 }
 
 func readConsole() {
@@ -46,7 +37,6 @@ func readConsole() {
 		interpreterF(text)
 	}
 	fmt.Println("[EXIT]")
-
 }
 
 //Funcionalidad del interprete
@@ -56,7 +46,17 @@ func interpreterF(input string) {
 
 //Funcion para el test de comandos
 func commandsTest() {
-	commands.FKDisk("disc_2.dsk", 200, 'B', 'L', 'W', "LOGICA6")
+	//commands.Mount("/home/yosoyfr/MIA/discos/Disco1.dsk", "Particion1")
+	//commands.Mkfile("vda1", "/bin/t6.txt", true, 0, "test")
+	//commands.Mkfile("vda1", "/home/user/docs/Hola.txt", false, 0, "Hola")
+	//commands.Reports("vda1", "DIRECTORIO", "/home/yosoyfr/MIA/discos/directorio.pdf", "")
+	//commands.Reports("vda1", "SB", "/home/yosoyfr/MIA/discos/sb.pdf", "")
+	//commands.Reports("vda1", "TREE_FILE", "/home/yosoyfr/MIA/discos/tree_file.pdf", "/cartasuicidio.txt")
+	//commands.Reports("vda1", "TREE_DIRECTORIO", "/home/yosoyfr/MIA/discos/tree_dir.pdf", "/")
+	//commands.Reports("vda1", "TREE_COMPLETE", "/home/yosoyfr/MIA/discos/tree_complete.pdf", "")
+	//commands.Reports("vda1", "DISK", "/home/yosoyfr/MIA/discos/disk.pdf", "")
+	//commands.Reports("vda1", "MBR", "/home/yosoyfr/MIA/discos/mbr.pdf", "")
+	commands.FDisk("disc_2.dsk", 200, 'B', 'L', 'W', "LOGICA6")
 	datos, err := ioutil.ReadFile("disc_2.dsk")
 	if err != nil {
 		log.Fatal(err)

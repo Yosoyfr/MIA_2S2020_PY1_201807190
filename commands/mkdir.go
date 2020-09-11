@@ -41,9 +41,14 @@ func Mkdir(id string, route string, p bool) {
 	if p {
 		createAllPath(file, &superboot, indexSB, root, folders, 0)
 	} else {
-		createPath(file, &superboot, indexSB, root, folders, 0)
+		err = createPath(file, &superboot, indexSB, root, folders, 0)
 	}
 	file.Close()
+	//Verificamos si no existio un error en la creacion de un directorio
+	if err != nil {
+		return
+	}
+	fmt.Println("[-] El directorio \"", route, "\" ha sido creado con exito.")
 }
 
 //Funcion para ir verificando si existe una ruta
@@ -86,7 +91,6 @@ func createAllPath(file *os.File, sb *superBoot, indexSB int64, vdt virtualDirec
 		vdt, bm = firstFitVDT(file, sb, vdt, bm)
 		//Procedemos a construir la estructura padre e hijo de los vdt trabajados
 		buildVDT(file, sb, indexSB, vdt, bm, string(auxVDT[:]))
-		fmt.Println("[-] El directorio \"", string(auxVDT[:]), "\" ha sido creado con exito.")
 		//Recuperamos el ultimo hijo insertado
 		aux := getVirtualDirectotyTree(file, sb.PrDirectoryTree, temp)
 		//Iteramos una vez mas el metodo si el arreglo de carpetas aun contiene datos
@@ -97,7 +101,7 @@ func createAllPath(file *os.File, sb *superBoot, indexSB int64, vdt virtualDirec
 }
 
 //Funcion para crear la ultima carpeta de un path
-func createPath(file *os.File, sb *superBoot, indexSB int64, vdt virtualDirectoryTree, folders []string, bm int64) {
+func createPath(file *os.File, sb *superBoot, indexSB int64, vdt virtualDirectoryTree, folders []string, bm int64) error {
 	//Casteamos el nombre del VDT
 	var auxVDT [20]byte
 	copy(auxVDT[:], folders[0])
@@ -110,19 +114,20 @@ func createPath(file *os.File, sb *superBoot, indexSB int64, vdt virtualDirector
 		aux := getVirtualDirectotyTree(file, sb.PrDirectoryTree, index)
 		//Iteramos una vez mas el metodo si el arreglo de carpetas aun contiene datos
 		if len(folders) > 0 {
-			createPath(file, sb, indexSB, aux, folders, index)
+			return createPath(file, sb, indexSB, aux, folders, index)
 		}
 	} else {
 		//Si no existe nos salta error de que el directorio no existe
 		if len(folders) > 0 {
 			fmt.Println("[ERROR]: El directorio donde se desea crear la carpeta no existe.")
+			return fmt.Errorf("[ERROR]")
 		} else {
 			vdt, bm = firstFitVDT(file, sb, vdt, bm)
 			//Procedemos a construir la estructura padre e hijo de los vdt trabajados
 			buildVDT(file, sb, indexSB, vdt, bm, string(auxVDT[:]))
-			fmt.Println("[-] El directorio", string(auxVDT[:]), "ha sido creado con exito.")
 		}
 	}
+	return nil
 }
 
 //Obtenemos el directorio donde se va a insertar

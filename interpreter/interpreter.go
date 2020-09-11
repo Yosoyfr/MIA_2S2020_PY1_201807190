@@ -135,7 +135,7 @@ func initLexer() (*lex.Lexer, error) {
 	lexer.Add([]byte(`([a-z]|[A-Z]|_)([a-z]|[A-Z]|[0-9]|_|\.)*`), token("ID"))
 	lexer.Add([]byte(`"([^\\"]|(\\.))*"`), token("ROUTE"))
 	lexer.Add([]byte(`/([a-z]|[A-Z]|[0-9]|_|/|-|\.)*`), token("ROUTE"))
-	lexer.Add([]byte(`(-)?[0-9]+`), token("NUMBER"))
+	lexer.Add([]byte(`[0-9]+`), token("NUMBER"))
 	lexer.Add([]byte(`-([a-z]|[A-Z])+`), token("PARAMETER"))
 	lexer.Add([]byte(`-id[0-9]+`), token("IDN"))
 	lexer.Add([]byte("( |\t|\r)+"), skip)

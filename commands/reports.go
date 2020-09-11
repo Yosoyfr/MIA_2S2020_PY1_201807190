@@ -59,23 +59,28 @@ func Reports(id string, rep string, path string, route string) {
 	case "TREE_DIRECTORIO":
 		if len(route) == 0 {
 			fmt.Println("[ERROR]: Necesita especificar una ruta para crear el reporte.")
+			err = fmt.Errorf("ERROR")
 		} else {
 			fmt.Println("[REPORT] Creando reporte de TREE_DIRECTORIO.")
-			report = reportDirectoryTree(file, sb, route)
+			report, err = reportDirectoryTree(file, sb, route)
 		}
 	case "TREE_FILE":
 		if len(route) == 0 {
 			fmt.Println("[ERROR]: Necesita especificar una ruta para crear el reporte.")
+			err = fmt.Errorf("ERROR")
 		} else {
 			fmt.Println("[REPORT] Creando reporte de TREE_FILE.")
-			report = reportTreeFile(file, sb, route)
+			report, err = reportTreeFile(file, sb, route)
 		}
 	default:
 		fmt.Println("[ERROR]: El tipo de reporte a crear no existe |", rep, "|.")
-		file.Close()
-		return
+		err = fmt.Errorf("ERROR")
 	}
 	file.Close()
+	//Verificamos que no se hubieran generado errores en la creacion de los dots
+	if err != nil {
+		return
+	}
 	err = ioutil.WriteFile("report.dot", []byte(report), 0644)
 	if err != nil {
 		log.Fatal(err)
@@ -576,11 +581,11 @@ func completeModel(file *os.File, sb superBoot, index int64) string {
 }
 
 //Reporte de arbol de directorio que muestra su detalle del directorio
-func reportDirectoryTree(file *os.File, sb superBoot, path string) string {
+func reportDirectoryTree(file *os.File, sb superBoot, path string) (string, error) {
 	//Revismos que la ruta a insertar sea correcta
 	if path[0] != '/' {
 		fmt.Println("[ERROR] El path no es valido.")
-		return ""
+		return "", fmt.Errorf("ERROR")
 	}
 	//Obtenemos las carpetas
 	folders := strings.Split(path, "/")
@@ -592,7 +597,7 @@ func reportDirectoryTree(file *os.File, sb superBoot, path string) string {
 	aux, _ := buildDirectoryTree(file, sb, root, folders)
 	dot += aux
 	dot += "}"
-	return dot
+	return dot, nil
 }
 
 //Funcion que construye el arbol de directorio con su detalle de directorio
@@ -735,11 +740,11 @@ func ddModel(file *os.File, sb superBoot, index int64, foldername [20]byte) stri
 }
 
 //Reporte del arbol de directorio donde este contenido en su detalle cierto archivo y que muestra los inodos que lo representan y su contenido en bloques
-func reportTreeFile(file *os.File, sb superBoot, path string) string {
+func reportTreeFile(file *os.File, sb superBoot, path string) (string, error) {
 	//Revismos que la ruta a insertar sea correcta
 	if path[0] != '/' {
 		fmt.Println("[ERROR] El path no es valido.")
-		return ""
+		return "", fmt.Errorf("ERROR")
 	}
 	//Obtenemos las carpetas
 	folders := strings.Split(path, "/")
@@ -747,7 +752,7 @@ func reportTreeFile(file *os.File, sb superBoot, path string) string {
 	//Obtenemos el nombre del archivo a representar
 	if !strings.HasSuffix(strings.ToLower(folders[len(folders)-1]), ".txt") {
 		fmt.Println("[ERROR] El file a buscar no es valido.")
-		return ""
+		return "", fmt.Errorf("ERROR")
 	}
 	var filename [20]byte
 	copy(filename[:], folders[len(folders)-1])
@@ -774,9 +779,12 @@ func reportTreeFile(file *os.File, sb superBoot, path string) string {
 		dot += " -> I"
 		dot += strconv.FormatInt(nInode, 10)
 		dot += ":0;\n"
+	} else {
+		fmt.Println("[ERROR] El archivo no fue encontrado.")
+		return "", fmt.Errorf("ERROR")
 	}
 	dot += "}"
-	return dot
+	return dot, nil
 }
 
 //Funcion que genera la estructura de todos los inodos que conforman un archivo

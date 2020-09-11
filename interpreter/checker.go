@@ -232,7 +232,7 @@ func paramDesigned(parameter *lexmachine.Token, paramType string, aux param) (pa
 			fmt.Println("[ERROR]: Se esperaba una ruta.")
 			return aux, fmt.Errorf("Error")
 		}
-		aux.ruta = string(parameter.Lexeme)
+		aux.ruta = strings.Replace(string(parameter.Lexeme), "\"", "", -1)
 	} else {
 		fmt.Println("[ERROR]: En la lectura del comando", aux.paramType, "el parametro \"", paramType, "\" no esta permitido.")
 		return aux, fmt.Errorf("Error")
@@ -281,7 +281,7 @@ func controlCommands(command param) {
 			if requiredParameters([]string{"SIZE", "PATH", "NAME"}, command) != nil {
 				return
 			}
-			commands.FKDisk(command.path, command.size, command.unit, command.Type, command.fit, command.name)
+			commands.FDisk(command.path, command.size, command.unit, command.Type, command.fit, command.name)
 		} else {
 			fmt.Println("[ERROR]: El comando FDISK proporciona un error en su estructura")
 		}
@@ -315,7 +315,7 @@ func controlCommands(command param) {
 		if requiredParameters([]string{"ID", "PATH"}, command) != nil {
 			return
 		}
-		fmt.Println("Hara el mkfile")
+		commands.Mkfile(command.id, command.path, command.pathComplete, command.size, command.txt)
 	case "CAT":
 		if requiredParameters([]string{"ID", "FILEN"}, command) != nil {
 			return
