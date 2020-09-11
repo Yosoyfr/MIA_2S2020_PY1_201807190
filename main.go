@@ -21,16 +21,17 @@ import (
 //Funcion Main
 func main() {
 	//interpreterF(interpreter.ReadMIAFile("/home/yosoyfr/MIA/test_discos/input.mia"))
-	//interpreterF(interpreter.ReadMIAFile("/home/yosoyfr/MIA/discos/input.mia"))
+	interpreterF(interpreter.ReadMIAFile("/home/yosoyfr/MIA/discos/input.mia"))
 	//Prueba de leer consola
 	//readConsole()
-	//inp := "Carta de suicidio por si no sale sale archivos"
-	commands.Mount("/home/yosoyfr/MIA/discos/Disco1.dsk", "Particion1")
-	//commands.Mkfile("vda1", "/cartasuicidio.txt", false, 0, inp)
+	//commands.Mount("/home/yosoyfr/MIA/discos/Disco1.dsk", "Particion1")
+	//commands.Mkfile("vda1", "/t6.txt", false, 0, "test")
+	//commands.Mkfile("vda1", "/home/user/docs/Hola.txt", false, 0, "Hola")
 	//commands.Reports("vda1", "DIRECTORIO", "/home/yosoyfr/MIA/discos/directorio.pdf", "")
 	//commands.Reports("vda1", "SB", "/home/yosoyfr/MIA/discos/sb.pdf", "")
-	commands.Reports("vda1", "TREE_FILE", "/home/yosoyfr/MIA/discos/tree_file.pdf", "/cartasuicidio.txt")
-	commands.Reports("vda1", "TREE_DIRECTORIO", "/home/yosoyfr/MIA/discos/tree_dir.pdf", "/")
+	//commands.Reports("vda1", "TREE_FILE", "/home/yosoyfr/MIA/discos/tree_file.pdf", "/cartasuicidio.txt")
+	//commands.Reports("vda1", "TREE_DIRECTORIO", "/home/yosoyfr/MIA/discos/tree_dir.pdf", "/")
+	//commands.Reports("vda1", "TREE_COMPLETE", "/home/yosoyfr/MIA/discos/tree_complete.pdf", "")
 	//commands.Reports("vda1", "DISK", "/home/yosoyfr/MIA/discos/disk.pdf", "")
 	//commands.Reports("vda1", "MBR", "/home/yosoyfr/MIA/discos/mbr.pdf", "")
 }

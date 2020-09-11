@@ -53,6 +53,9 @@ func Reports(id string, rep string, path string, route string) {
 	case "DIRECTORIO":
 		fmt.Println("[REPORT] Creando reporte de DIRECTORIO.")
 		report = reportVirtualDirectoryTree(file, sb)
+	case "TREE_COMPLETE":
+		fmt.Println("[REPORT] Creando reporte de TREE_COMPLETE.")
+		report = reportTreeComplete(file, sb)
 	case "TREE_DIRECTORIO":
 		if len(route) == 0 {
 			fmt.Println("[ERROR]: Necesita especificar una ruta para crear el reporte.")
@@ -523,6 +526,55 @@ func vdtModel(file *os.File, sb superBoot, index int64) string {
 	return dot
 }
 
+//Reporte completo de todo los directorios con su detalle y archivos
+func reportTreeComplete(file *os.File, sb superBoot) string {
+	var dot string = "digraph REP_VDT{\nrankdir = LR;\n node [shape=plain, fontsize=20];\n ranksep = 2;\n\n"
+	//Empezamos a escribir el reporte
+	dot += completeModel(file, sb, 0)
+	dot += "}"
+	return dot
+}
+
+//Modelo completo de todo los directorios con su detalle y archivos
+func completeModel(file *os.File, sb superBoot, index int64) string {
+	vdt := getVirtualDirectotyTree(file, sb.PrDirectoryTree, index)
+	dot := vdtTable(vdt, index)
+	//Creamos los subdirecotrios
+	for i := 0; i < len(vdt.Subdirectories); i++ {
+		if vdt.Subdirectories[i] != -1 {
+			dot += completeModel(file, sb, vdt.Subdirectories[i])
+			dot += "N"
+			dot += strconv.FormatInt(index, 10)
+			dot += ":"
+			dot += strconv.Itoa(i + 1)
+			dot += " -> N"
+			dot += strconv.FormatInt(vdt.Subdirectories[i], 10)
+			dot += ":0;\n"
+		}
+	}
+	//Creamos el indirecto si es que existe
+	if vdt.PrVirtualDirectoryTree != -1 {
+		dot += vdtModel(file, sb, vdt.PrVirtualDirectoryTree)
+		dot += "N"
+		dot += strconv.FormatInt(index, 10)
+		dot += ":8-> N"
+		dot += strconv.FormatInt(vdt.PrVirtualDirectoryTree, 10)
+		dot += ":0;\n"
+	}
+	//Creamos los detalles de directorios
+	dot += ddModel(file, sb, index, vdt.DirectoryName)
+	//Asignamos el detalle de directorio
+	dot += "N"
+	dot += strconv.FormatInt(index, 10)
+	dot += ":7"
+	dot += " -> D"
+	dot += strconv.FormatInt(vdt.PrDirectoryDetail, 10)
+	dot += ":0;\n"
+	//Construimos los inodos
+	dot += inodesModel(file, sb, vdt.PrDirectoryDetail)
+	return dot
+}
+
 //Reporte de arbol de directorio que muestra su detalle del directorio
 func reportDirectoryTree(file *os.File, sb superBoot, path string) string {
 	//Revismos que la ruta a insertar sea correcta
@@ -679,7 +731,6 @@ func ddModel(file *os.File, sb superBoot, index int64, foldername [20]byte) stri
 		dot += strconv.FormatInt(dd.PrDirectoryDetail, 10)
 		dot += ":0;\n"
 	}
-
 	return dot
 }
 
@@ -782,6 +833,32 @@ func inodeModel(file *os.File, sb superBoot, index int64) string {
 		dot += ":7-> I"
 		dot += strconv.FormatInt(inode.PrIndirect, 10)
 		dot += ":0;\n"
+	}
+	return dot
+}
+
+//Funcion que genera multiples inodos de varios archivos
+func inodesModel(file *os.File, sb superBoot, index int64) string {
+	//Obtenemos el detalle de directorio
+	dd := getDirectotyDetail(file, sb.PrDirectoryDetail, index)
+	//Recuperamos el puntero del inodo donde se encuentra el archivo
+	dot := ""
+	for i := 0; i < len(dd.Files); i++ {
+		nInode, nDD := searchFile(file, sb, dd, dd.Files[i].Name)
+		if nInode != -1 {
+			dot += inodeModel(file, sb, nInode)
+			//Asignamos el inodo al detalle de directoio
+			dot += "D"
+			dot += strconv.FormatInt(index, 10)
+			dot += ":"
+			dot += strconv.Itoa(nDD + 1)
+			dot += " -> I"
+			dot += strconv.FormatInt(nInode, 10)
+			dot += ":0;\n"
+		}
+	}
+	if dd.PrDirectoryDetail != -1 {
+		dot += inodesModel(file, sb, dd.PrDirectoryDetail)
 	}
 	return dot
 }
