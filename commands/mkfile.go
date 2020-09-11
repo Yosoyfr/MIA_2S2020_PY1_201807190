@@ -176,7 +176,7 @@ func firstFitDD(file *os.File, sb *superBoot, dd directoryDetail, bm int64) (dir
 //Funcion que nos retorna el puntero del detalle de directorio de un directorio
 func existDetailDirectory(file *os.File, sb *superBoot, vdt virtualDirectoryTree, folders []string, bm int64) int64 {
 	//Casteamos el nombre del VDT
-	var auxVDT [16]byte
+	var auxVDT [20]byte
 	copy(auxVDT[:], folders[0])
 	//Lo quitamos de la lista de carpetas
 	folders = folders[1:]
@@ -197,7 +197,7 @@ func existDetailDirectory(file *os.File, sb *superBoot, vdt virtualDirectoryTree
 //Funcion para construir una estructrura de un inode y su DDfile
 func assignmentFile(file *os.File, sb *superBoot, indexSB int64, dd *directoryDetail, name string) {
 	//Casteamos el nombre del archivo
-	var filename [16]byte
+	var filename [20]byte
 	copy(filename[:], name)
 	//Creamos el DDFILE
 	f := structDDF(filename, sb.FirstFreeBitInodeTable)
@@ -229,7 +229,7 @@ func assignmentFile(file *os.File, sb *superBoot, indexSB int64, dd *directoryDe
 }
 
 //Funcion que devuelve un struct Directory Detail File
-func structDDF(filename [16]byte, prInode int64) ddFile {
+func structDDF(filename [20]byte, prInode int64) ddFile {
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
 	f := ddFile{
 		Name:    filename,

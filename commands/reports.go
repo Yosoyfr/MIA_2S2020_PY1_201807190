@@ -23,16 +23,16 @@ func Reports(id string, rep string, path string, route string) {
 		reportBM(id, rep, path, route)
 		return
 	}
-		//Superboot a trabajar
+	//Superboot a trabajar
 	sb := superBoot{}
 	//Obtenemos el file y la particion a trabajar
 	diskPath, mountedPart, err := searchPartition(id)
 	if err != nil {
-		return 
+		return
 	}
 	file, mbr, err := readFile(diskPath)
 	if err != nil {
-		return 
+		return
 	}
 	//Definimos el tipo de particion que es
 	indexSB, name := getPartitionType(mountedPart)
@@ -382,7 +382,7 @@ func searchPartition(id string) (string, mountedParts, error) {
 	return mountedDisk.path, mountedPartition, nil
 }
 
-func reportSuperBoot(file *os.File, mountedPart mountedParts, superboot superBoot, name string, ) string {
+func reportSuperBoot(file *os.File, mountedPart mountedParts, superboot superBoot, name string) string {
 	var dot string = "digraph REP_SB{\nrankdir = LR;\n node [shape=plain, fontsize=20];\n\n"
 	//Empezamos a escribir el reporte
 	dot += "Node0 [label=<\n"
@@ -487,7 +487,7 @@ func reportSuperBoot(file *os.File, mountedPart mountedParts, superboot superBoo
 
 //Reporte de arbol virtual de directorio
 func reportVirtualDirectoryTree(file *os.File, sb superBoot) string {
-	var dot string = "digraph REP_SB{\nrankdir = LR;\n node [shape=plain, fontsize=20];\n ranksep = 2;\n\n"
+	var dot string = "digraph REP_VDT{\nrankdir = LR;\n node [shape=plain, fontsize=20];\n ranksep = 2;\n\n"
 	//Empezamos a escribir el reporte
 	dot += vdtModel(file, sb, 0)
 	dot += "}"
@@ -529,7 +529,7 @@ func reportDirectoryTree(file *os.File, sb superBoot, path string) string {
 	if path[0] != '/' {
 		fmt.Println("[ERROR] El path no es valido.")
 		return ""
-	} 
+	}
 	//Obtenemos las carpetas
 	folders := strings.Split(path, "/")
 	folders = folders[1:]
@@ -547,7 +547,7 @@ func reportDirectoryTree(file *os.File, sb superBoot, path string) string {
 func buildDirectoryTree(file *os.File, sb superBoot, root virtualDirectoryTree, folders []string) (string, int64) {
 	var index int64
 	var aux string
-	var foldername [16]byte
+	var foldername [20]byte
 	var pr int64
 	//Obtenemos la raiz
 	dot := vdtTable(root, 0)
@@ -606,9 +606,9 @@ func vdtTable(vdt virtualDirectoryTree, bm int64) string {
 }
 
 //Funcion del modelo treeFile
-func directoryTreeModel(file *os.File, sb *superBoot, vdt virtualDirectoryTree, folders []string, bm int64) (int64, string, [16]byte, int64) {
+func directoryTreeModel(file *os.File, sb *superBoot, vdt virtualDirectoryTree, folders []string, bm int64) (int64, string, [20]byte, int64) {
 	//Casteamos el nombre del VDT
-	var auxVDT [16]byte
+	var auxVDT [20]byte
 	copy(auxVDT[:], folders[0])
 	//Lo quitamos de la lista de carpetas
 	folders = folders[1:]
@@ -637,11 +637,11 @@ func directoryTreeModel(file *os.File, sb *superBoot, vdt virtualDirectoryTree, 
 		}
 		return aux.PrDirectoryDetail, dot, auxVDT, index
 	}
-	return -1, "", [16]byte{}, -1
+	return -1, "", [20]byte{}, -1
 }
 
 //Funcion que genera la estructura de todo un detalle de directorio de una directorio
-func ddModel(file *os.File, sb superBoot, index int64, foldername [16]byte) string {
+func ddModel(file *os.File, sb superBoot, index int64, foldername [20]byte) string {
 	dot := "D"
 	dot += strconv.FormatInt(index, 10)
 	dot += "[color=\"#7ab648\"  label=<\n"
@@ -659,14 +659,14 @@ func ddModel(file *os.File, sb superBoot, index int64, foldername [16]byte) stri
 		} else {
 			dot += "----------"
 		}
-		dot += "</td><td PORT=\""
+		dot += "</td><td bgcolor=\"#fcc438\" PORT=\""
 		dot += strconv.Itoa(i + 1)
 		dot += "\">"
 		dot += strconv.FormatInt(dd.Files[i].PrInode, 10)
 		dot += "</td></tr>\n"
 	}
 	//Apuntador indirecto
-	dot += "\t<tr><td bgcolor=\"#fcc438\">aptr_ind</td><td  PORT=\"6\">"
+	dot += "\t<tr><td bgcolor=\"#7ab648\">aptr_ind</td><td  PORT=\"6\">"
 	dot += strconv.FormatInt(dd.PrDirectoryDetail, 10)
 	dot += "</td></tr>\n"
 	dot += "</table>\n>];\n"
@@ -689,7 +689,7 @@ func reportTreeFile(file *os.File, sb superBoot, path string) string {
 	if path[0] != '/' {
 		fmt.Println("[ERROR] El path no es valido.")
 		return ""
-	} 
+	}
 	//Obtenemos las carpetas
 	folders := strings.Split(path, "/")
 	folders = folders[1:]
@@ -698,7 +698,7 @@ func reportTreeFile(file *os.File, sb superBoot, path string) string {
 		fmt.Println("[ERROR] El file a buscar no es valido.")
 		return ""
 	}
-	var filename [16]byte
+	var filename [20]byte
 	copy(filename[:], folders[len(folders)-1])
 	folders = folders[:len(folders)-1]
 	//Empezamos a escribir el reporte
@@ -712,27 +712,110 @@ func reportTreeFile(file *os.File, sb superBoot, path string) string {
 	//Obtenemos el detalle de directorio
 	dd := getDirectotyDetail(file, sb.PrDirectoryDetail, bm)
 	//Recuperamos el puntero del inodo donde se encuentra el archivo
-	nInode := searchFile(file, sb, dd, filename)
+	nInode, nDD := searchFile(file, sb, dd, filename)
 	if nInode != -1 {
-		fmt.Println(nInode)
+		dot += inodeModel(file, sb, nInode)
+		//Asignamos el inodo al detalle de directoio
+		dot += "D"
+		dot += strconv.FormatInt(bm, 10)
+		dot += ":"
+		dot += strconv.Itoa(nDD + 1)
+		dot += " -> I"
+		dot += strconv.FormatInt(nInode, 10)
+		dot += ":0;\n"
 	}
 	dot += "}"
-	
+	return dot
+}
+
+//Funcion que genera la estructura de todos los inodos que conforman un archivo
+func inodeModel(file *os.File, sb superBoot, index int64) string {
+	dot := "I"
+	dot += strconv.FormatInt(index, 10)
+	dot += "[color=\"#fcc438\"  label=<\n"
+	dot += "<table border=\"0\" cellborder=\"1\" cellpadding=\"10\">\n"
+	inode := getInode(file, sb.PrInodeTable, index)
+	dot += "\t<tr><td bgcolor=\"#fcc438\" colspan=\"2\" PORT=\"0\">"
+	dot += "INODO: " + strconv.FormatInt(inode.Count, 10)
+	dot += "</td></tr>\n"
+	//Bloques del inodo
+	for i := 0; i < len(inode.Blocks); i++ {
+		dot += "\t<tr><td>aptr"
+		dot += strconv.Itoa(i + 1)
+		dot += "</td><td bgcolor=\"#ffbbb1\" PORT=\""
+		dot += strconv.Itoa(i + 1)
+		dot += "\">"
+		dot += strconv.FormatInt(inode.Blocks[i], 10)
+		dot += "</td></tr>\n"
+	}
+	//Tamaño del archivo
+	dot += "\t<tr><td>Tamaño</td><td  PORT=\"5\">"
+	dot += strconv.FormatInt(inode.SizeFile, 10)
+	dot += "</td></tr>\n"
+	//Cantidad de bloques
+	dot += "\t<tr><td>Bloques</td><td  PORT=\"6\">"
+	dot += strconv.FormatInt(inode.AllocatedBlock, 10)
+	dot += "</td></tr>\n"
+	//Apuntador indirecto
+	dot += "\t<tr><td bgcolor=\"#fcc438\">aptr_ind</td><td  PORT=\"7\">"
+	dot += strconv.FormatInt(inode.PrIndirect, 10)
+	dot += "</td></tr>\n"
+	dot += "</table>\n>];\n"
+	//Creamos los bloques de datos
+	for i := 0; i < len(inode.Blocks); i++ {
+		if inode.Blocks[i] != -1 {
+			dot += blockModel(file, sb, inode.Blocks[i])
+			dot += "I"
+			dot += strconv.FormatInt(inode.Count, 10)
+			dot += ":"
+			dot += strconv.Itoa(i + 1)
+			dot += " -> B"
+			dot += strconv.FormatInt(inode.Blocks[i], 10)
+			dot += ":0;\n"
+		}
+	}
+	//Creamos el indirecto si es que existe
+	if inode.PrIndirect != -1 {
+		dot += inodeModel(file, sb, inode.PrIndirect)
+		dot += "I"
+		dot += strconv.FormatInt(index, 10)
+		dot += ":7-> I"
+		dot += strconv.FormatInt(inode.PrIndirect, 10)
+		dot += ":0;\n"
+	}
+	return dot
+}
+
+//Funcion que genera la estructura de un bloque de datos de un inodo
+func blockModel(file *os.File, sb superBoot, index int64) string {
+	dot := "B"
+	dot += strconv.FormatInt(index, 10)
+	dot += "[color=\"#ffbbb1\"  label=<\n"
+	dot += "<table border=\"0\" cellborder=\"1\" cellpadding=\"10\">\n"
+	block := getBlock(file, sb.PrBlocks, index)
+	//Numero de bloque
+	dot += "\t<tr><td bgcolor=\"#ffbbb1\" PORT=\"0\">Bloque</td><td bgcolor=\"#ffbbb1\">"
+	dot += strconv.FormatInt(index, 10)
+	dot += "</td></tr>\n"
+	dot += "\t<tr><td colspan=\"2\" PORT=\"1\">"
+	dot += strings.Replace(string(block.Data[:]), "\x00", "", -1)
+	dot += "</td></tr>\n"
+	dot += "</table>\n>];\n"
 	return dot
 }
 
 //Funcion que recorre todo el detalle de directorio para encontrar un archivo
-func searchFile(file *os.File, sb superBoot, dd directoryDetail, filename [16]byte) int64 {
+func searchFile(file *os.File, sb superBoot, dd directoryDetail, filename [20]byte) (int64, int) {
 	for i := 0; i < len(dd.Files); i++ {
 		if dd.Files[i].Name == filename {
-			return dd.Files[i].PrInode
+			return dd.Files[i].PrInode, i
 		}
 	}
 	if dd.PrDirectoryDetail != -1 {
 		aux := getDirectotyDetail(file, sb.PrDirectoryDetail, dd.PrDirectoryDetail)
 		return searchFile(file, sb, aux, filename)
 	}
-	return -1
+	return -1, -1
 }
 
 //Funcion para crear reportes de bitmaps

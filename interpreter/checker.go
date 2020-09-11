@@ -45,7 +45,7 @@ func ReadMIAFile(route string) string {
 	var output string
 	file, err := os.Open(route)
 	if err != nil {
-		fmt.Println("Error: El sistema no puede encontrar el archivo especificado.")
+		fmt.Println("[ERROR]: El sistema no puede encontrar el archivo especificado.")
 		return output
 	}
 	defer file.Close()
@@ -86,6 +86,10 @@ func CommandChecker(s *lexmachine.Scanner) {
 			if strings.EqualFold(string(token.Lexeme), value) {
 				aux.paramType = value
 			}
+		}
+		if aux.paramType == "" && string(token.Lexeme) != "\n" {
+			fmt.Println("[ERROR]: Este comando \"", string(token.Lexeme), "\" no esta admitido en el sistema.")
+			return
 		}
 		//Verificamos si viene algun parametro para asignarlo
 		if tokens[token.Type] == "PARAMETER" {
@@ -138,31 +142,31 @@ func paramDesigned(parameter *lexmachine.Token, paramType string, aux param) (pa
 	if paramType == "PATH" {
 		//Verificamos si ya existe un path
 		if aux.path != "" {
-			fmt.Println("Error: Ya existe un PATH asignado")
+			fmt.Println("[ERROR]: Ya existe un PATH asignado")
 			return aux, fmt.Errorf("Error")
 		}
 		if tokens[parameter.Type] != "ROUTE" {
-			fmt.Println("Error: No es una ruta valida")
+			fmt.Println("[ERROR]: No es una ruta valida")
 			return aux, fmt.Errorf("Error")
 		}
 		aux.path = strings.Replace(string(parameter.Lexeme), "\"", "", -1)
 	} else if paramType == "SIZE" {
 		if aux.size != 0 {
-			fmt.Println("Error: Ya existe un SIZE asignado")
+			fmt.Println("[ERROR]: Ya existe un SIZE asignado")
 			return aux, fmt.Errorf("Error")
 		}
 		if tokens[parameter.Type] != "NUMBER" {
-			fmt.Println("Error: No es un numero valido")
+			fmt.Println("[ERROR]: No es un numero valido")
 			return aux, fmt.Errorf("Error")
 		}
 		aux.size, _ = strconv.ParseInt(string(parameter.Lexeme), 10, 64)
 	} else if paramType == "NAME" {
 		if aux.name != "" {
-			fmt.Println("Error: Ya existe un NAME asignado", string(parameter.Lexeme))
+			fmt.Println("[ERROR]: Ya existe un NAME asignado", string(parameter.Lexeme))
 			return aux, fmt.Errorf("Error")
 		}
 		if tokens[parameter.Type] != "ID" {
-			fmt.Println("Error: Se esperaba un ID")
+			fmt.Println("[ERROR]: Se esperaba un ID")
 			return aux, fmt.Errorf("Error")
 		}
 		aux.name = string(parameter.Lexeme)
@@ -170,67 +174,67 @@ func paramDesigned(parameter *lexmachine.Token, paramType string, aux param) (pa
 		aux.unit = strings.ToUpper(string(parameter.Lexeme))[0]
 	} else if paramType == "TYPE" {
 		if aux.Type != 0 {
-			fmt.Println("Error: Ya existe un TYPE asignado")
+			fmt.Println("[ERROR]: Ya existe un TYPE asignado")
 			return aux, fmt.Errorf("Error")
 		}
 		aux.Type = strings.ToUpper(string(parameter.Lexeme))[0]
 	} else if paramType == "FIT" {
 		if aux.fit != 0 {
-			fmt.Println("Error: Ya existe un FIT asignado")
+			fmt.Println("[ERROR]: Ya existe un FIT asignado")
 			return aux, fmt.Errorf("Error")
 		}
 		aux.fit = strings.ToUpper(string(parameter.Lexeme))[0]
 	} else if paramType == "DELETE" {
 		if aux.delete != "" {
-			fmt.Println("Error: Ya existe un DELETE asignado")
+			fmt.Println("[ERROR]: Ya existe un DELETE asignado")
 			return aux, fmt.Errorf("Error")
 		}
 		aux.delete = strings.ToUpper(string(parameter.Lexeme))
 	} else if paramType == "ADD" {
 		if aux.add != "" {
-			fmt.Println("Error: Ya existe un ADD asignado")
+			fmt.Println("[ERROR]: Ya existe un ADD asignado")
 			return aux, fmt.Errorf("Error")
 		}
 		if tokens[parameter.Type] != "NUMBER" {
-			fmt.Println("Error: No es un numero valido")
+			fmt.Println("[ERROR]: No es un numero valido")
 			return aux, fmt.Errorf("Error")
 		}
 		aux.add = string(parameter.Lexeme)
 	} else if paramType == "IDN" {
 		if tokens[parameter.Type] != "ID" {
-			fmt.Println("Error: Se esperaba un ID")
+			fmt.Println("[ERROR]: Se esperaba un ID")
 			return aux, fmt.Errorf("Error")
 		}
 		aux.idn = append(aux.idn, string(parameter.Lexeme))
 	} else if paramType == "ID" {
 		if tokens[parameter.Type] != "ID" {
-			fmt.Println("Error: Se esperaba un ID")
+			fmt.Println("[ERROR]: Se esperaba un ID")
 			return aux, fmt.Errorf("Error")
 		}
 		aux.id = string(parameter.Lexeme)
 	} else if paramType == "P" {
-		fmt.Println("Error: Este comando no recibe parametros")
+		fmt.Println("[ERROR]: Este comando no recibe parametros")
 		return aux, fmt.Errorf("Error")
 	} else if paramType == "CONT" {
 		if tokens[parameter.Type] != "ROUTE" {
-			fmt.Println("Error: Se esperaba una cadena.")
+			fmt.Println("[ERROR]: Se esperaba una cadena.")
 			return aux, fmt.Errorf("Error")
 		}
 		aux.txt = strings.Replace(string(parameter.Lexeme), "\"", "", -1)
 	} else if paramType == "FILEN" {
 		if tokens[parameter.Type] != "ROUTE" {
-			fmt.Println("Error: Se esperaba una ruta.")
+			fmt.Println("[ERROR]: Se esperaba una ruta.")
 			return aux, fmt.Errorf("Error")
 		}
 		aux.filen = append(aux.filen, string(parameter.Lexeme))
 	} else if paramType == "RUTA" {
 		if tokens[parameter.Type] != "ROUTE" {
-			fmt.Println("Error: Se esperaba una ruta.")
+			fmt.Println("[ERROR]: Se esperaba una ruta.")
 			return aux, fmt.Errorf("Error")
 		}
 		aux.ruta = string(parameter.Lexeme)
 	} else {
-		fmt.Println("Error: En la lectura del comando", aux.paramType)
+		fmt.Println("[ERROR]: En la lectura del comando", aux.paramType, "el parametro \"", paramType, "\" no esta permitido.")
 		return aux, fmt.Errorf("Error")
 	}
 	return aux, nil
@@ -279,7 +283,7 @@ func controlCommands(command param) {
 			}
 			commands.FKDisk(command.path, command.size, command.unit, command.Type, command.fit, command.name)
 		} else {
-			fmt.Println("Error: El comando FDISK proporciona un error en su estructura")
+			fmt.Println("[ERROR]: El comando FDISK proporciona un error en su estructura")
 		}
 	case "MOUNT":
 		if command.path == "" && command.name == "" {
@@ -332,32 +336,32 @@ func requiredParameters(params []string, command param) error {
 		switch parameter {
 		case "SIZE":
 			if command.size == 0 {
-				fmt.Println("Error: El comando a ejecutar necesita un size.")
+				fmt.Println("[ERROR]: El comando a ejecutar necesita un size.")
 				return fmt.Errorf("Error")
 			}
 		case "PATH":
 			if command.path == "" {
-				fmt.Println("Error: El comando a ejecutar necesita un path.")
+				fmt.Println("[ERROR]: El comando a ejecutar necesita un path.")
 				return fmt.Errorf("Error")
 			}
 		case "NAME":
 			if command.name == "" {
-				fmt.Println("Error: El comando a ejecutar necesita un nombre.")
+				fmt.Println("[ERROR]: El comando a ejecutar necesita un nombre.")
 				return fmt.Errorf("Error")
 			}
 		case "IDN":
 			if len(command.idn) == 0 {
-				fmt.Println("Error: El comando a ejecutar necesita un ID por lo menos.")
+				fmt.Println("[ERROR]: El comando a ejecutar necesita un ID por lo menos.")
 				return fmt.Errorf("Error")
 			}
 		case "ID":
 			if command.id == "" {
-				fmt.Println("Error: El comando a ejecutar necesita un ID por lo menos.")
+				fmt.Println("[ERROR]: El comando a ejecutar necesita un ID por lo menos.")
 				return fmt.Errorf("Error")
 			}
 		case "CAT":
 			if len(command.filen) == 0 {
-				fmt.Println("Error: El comando a ejecutar necesita un file por lo menos.")
+				fmt.Println("[ERROR]: El comando a ejecutar necesita un file por lo menos.")
 				return fmt.Errorf("Error")
 			}
 		}
@@ -374,7 +378,7 @@ func requiredParameters(params []string, command param) error {
 		}
 	}
 	if err != nil {
-		fmt.Println("Error: El tipo de particion no es valido.")
+		fmt.Println("[ERROR]: El tipo de particion no es valido.")
 		return fmt.Errorf("Error")
 	}
 	//Todos los parametros obligatorios fueron cumplidos
@@ -407,7 +411,7 @@ func validUnitTypes(command param) (param, error) {
 		return command, nil
 	}
 	//En otro caso es error
-	fmt.Println("Error: El tipo de unidad no es valido.")
+	fmt.Println("[ERROR]: El tipo de unidad no es valido.")
 	return command, fmt.Errorf("Error")
 }
 

@@ -47,7 +47,7 @@ type superBoot struct {
 //Struct del arbol virtual de directorio
 type virtualDirectoryTree struct {
 	CreatedAt              [19]byte
-	DirectoryName          [16]byte
+	DirectoryName          [20]byte
 	Subdirectories         [6]int64
 	PrDirectoryDetail      int64
 	PrVirtualDirectoryTree int64
@@ -62,7 +62,7 @@ type directoryDetail struct {
 
 //Struct de archivos
 type ddFile struct {
-	Name             [16]byte
+	Name             [20]byte
 	PrInode          int64
 	CreationDate     [19]byte
 	ModificationDate [19]byte
@@ -201,7 +201,7 @@ func Mkfs(idPart string, Type string) {
 	bitMapVDT := []byte{'1'}
 	writeBitmap(file, sb.PrDirectoryTreeBitmap, bitMapVDT)
 	//[b] Creamos el detalle directorio de la carpeta '/'
-	dd := directoryDetail{PrDirectoryDetail: -1}
+	dd := structDD()
 	//Escribimos el arbol virtual de directorio de '/'
 	writeDD(file, sb.PrDirectoryDetail, &dd)
 	//Reescribimos el bitmap de detellae de directorio
@@ -330,4 +330,38 @@ func getDirectotyDetail(file *os.File, pr int64, bm int64) directoryDetail {
 		log.Fatal("binary.Read failed", err)
 	}
 	return dd
+}
+
+//Funcion para recuperar un inodo
+func getInode(file *os.File, pr int64, bm int64) iNode {
+	inode := iNode{}
+	size := int64(binary.Size(inode))
+	index := pr + bm*size
+	file.Seek(index, 0)
+	//Se obtiene la data del archivo binarios
+	data := readNextBytes(file, size)
+	buffer := bytes.NewBuffer(data)
+	//Se asigna al mbr declarado para leer la informacion de ese disco
+	err := binary.Read(buffer, binary.BigEndian, &inode)
+	if err != nil {
+		log.Fatal("binary.Read failed", err)
+	}
+	return inode
+}
+
+//Funcion para recuperar un un bloque de datos
+func getBlock(file *os.File, pr int64, bm int64) dataBlock {
+	block := dataBlock{}
+	size := int64(binary.Size(block))
+	index := pr + bm*size
+	file.Seek(index, 0)
+	//Se obtiene la data del archivo binarios
+	data := readNextBytes(file, size)
+	buffer := bytes.NewBuffer(data)
+	//Se asigna al mbr declarado para leer la informacion de ese disco
+	err := binary.Read(buffer, binary.BigEndian, &block)
+	if err != nil {
+		log.Fatal("binary.Read failed", err)
+	}
+	return block
 }

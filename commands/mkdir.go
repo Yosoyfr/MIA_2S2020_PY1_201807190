@@ -47,7 +47,7 @@ func Mkdir(id string, route string, p bool) {
 }
 
 //Funcion para ir verificando si existe una ruta
-func existPath(file *os.File, sb *superBoot, vdt virtualDirectoryTree, folder [16]byte) int64 {
+func existPath(file *os.File, sb *superBoot, vdt virtualDirectoryTree, folder [20]byte) int64 {
 	for i := 0; i < len(vdt.Subdirectories); i++ {
 		if vdt.Subdirectories[i] != -1 {
 			aux := getVirtualDirectotyTree(file, sb.PrDirectoryTree, vdt.Subdirectories[i])
@@ -66,7 +66,7 @@ func existPath(file *os.File, sb *superBoot, vdt virtualDirectoryTree, folder [1
 //Funcion para crear todo el path completo que se le asigne
 func createAllPath(file *os.File, sb *superBoot, indexSB int64, vdt virtualDirectoryTree, folders []string, bm int64) {
 	//Casteamos el nombre del VDT
-	var auxVDT [16]byte
+	var auxVDT [20]byte
 	copy(auxVDT[:], folders[0])
 	//Lo quitamos de la lista de carpetas
 	folders = folders[1:]
@@ -99,7 +99,7 @@ func createAllPath(file *os.File, sb *superBoot, indexSB int64, vdt virtualDirec
 //Funcion para crear la ultima carpeta de un path
 func createPath(file *os.File, sb *superBoot, indexSB int64, vdt virtualDirectoryTree, folders []string, bm int64) {
 	//Casteamos el nombre del VDT
-	var auxVDT [16]byte
+	var auxVDT [20]byte
 	copy(auxVDT[:], folders[0])
 	//Lo quitamos de la lista de carpetas
 	folders = folders[1:]
@@ -171,7 +171,7 @@ func buildVDT(file *os.File, sb *superBoot, indexSB int64, vdt virtualDirectoryT
 }
 
 func createVDT(file *os.File, sb *superBoot, indexSB int64, vdt *virtualDirectoryTree, folder string, freeBit int64) virtualDirectoryTree {
-	var folderName [16]byte
+	var folderName [20]byte
 	copy(folderName[:], folder)
 	created := false
 	//Asignamos el puntero
@@ -212,7 +212,7 @@ func createVDT(file *os.File, sb *superBoot, indexSB int64, vdt *virtualDirector
 }
 
 //Funcion que te devuelve un struct virtual directory tree
-func structVDT(name [16]byte, prDD int64) virtualDirectoryTree {
+func structVDT(name [20]byte, prDD int64) virtualDirectoryTree {
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
 	newFolder := virtualDirectoryTree{
 		Subdirectories:         [6]int64{-1, -1, -1, -1, -1, -1},
