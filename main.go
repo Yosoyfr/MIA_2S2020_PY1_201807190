@@ -29,6 +29,7 @@ func main() {
 	//commands.Mount("/home/yosoyfr/MIA/discos/Disco1.dsk", "Particion1")
 	commands.Reports("vda1", "MBR", "/home/yosoyfr/MIA/discos/mbr2.pdf", "")
 	commands.Reports("vda1", "DISK", "/home/yosoyfr/MIA/discos/disk2.pdf", "")
+	commands.Reports("vda1", "BITACORA", "/home/yosoyfr/MIA/discos/log.pdf", "")
 }
 
 func readConsole() {

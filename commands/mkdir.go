@@ -43,11 +43,20 @@ func Mkdir(id string, route string, p bool) {
 	} else {
 		err = createPath(file, &superboot, indexSB, root, folders, 0)
 	}
-	file.Close()
 	//Verificamos si no existio un error en la creacion de un directorio
 	if err != nil {
+		file.Close()
 		return
 	}
+	//Agregamos la accion a la bitacora
+	indexLog := getFreeLog(file, superboot.PrLog, superboot.VirtualTreeCount)
+	if indexLog != -1 {
+		//Creamos la bitacora de este proceso
+		bita := structLog("MKDIR", "", route, 0, 'D')
+		//Escribimos la bitacora
+		writeBitacora(file, indexLog, &bita)
+	}
+	file.Close()
 	fmt.Println("[-] El directorio \"", route, "\" ha sido creado con exito.")
 }
 
@@ -121,11 +130,10 @@ func createPath(file *os.File, sb *superBoot, indexSB int64, vdt virtualDirector
 		if len(folders) > 0 {
 			fmt.Println("[ERROR]: El directorio donde se desea crear la carpeta no existe.")
 			return fmt.Errorf("[ERROR]")
-		} else {
-			vdt, bm = firstFitVDT(file, sb, vdt, bm)
-			//Procedemos a construir la estructura padre e hijo de los vdt trabajados
-			buildVDT(file, sb, indexSB, vdt, bm, string(auxVDT[:]))
 		}
+		vdt, bm = firstFitVDT(file, sb, vdt, bm)
+		//Procedemos a construir la estructura padre e hijo de los vdt trabajados
+		buildVDT(file, sb, indexSB, vdt, bm, string(auxVDT[:]))
 	}
 	return nil
 }

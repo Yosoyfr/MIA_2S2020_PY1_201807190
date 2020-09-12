@@ -86,10 +86,11 @@ type dataBlock struct {
 //Struct del LOG [Bitacora]
 type bitacora struct {
 	Operation       [6]byte
-	Type            int8
-	Name            [16]byte
-	Content         int8
+	Type            byte
+	Name            [100]byte
+	Content         [100]byte
 	TransactionDate [19]byte
+	Size            int64
 }
 
 //Comando MKFS para formatear una particion
@@ -114,20 +115,12 @@ func Mkfs(idPart string, Type string) {
 	case 1:
 		logicalPartition = mountedPart.partition.(extendedBootRecord)
 	}
-	//Variable que representa el numero de estructuras
-	var numberOfStructures int64
 	//Tamaños de las estruturas
 	var partitionSize int64
 	//Inicio de la particon
 	var partitionStart int64
 	//Nombre de la particion
 	var partitionName string
-	superBootSize := int64(binary.Size(superBoot{}))
-	virtualTreeSize := int64(binary.Size(virtualDirectoryTree{}))
-	directoryDetailSize := int64(binary.Size(directoryDetail{}))
-	iNodeSize := int64(binary.Size(iNode{}))
-	blockSize := int64(binary.Size(dataBlock{}))
-	logSize := int64(binary.Size(bitacora{}))
 	//Trabajamos con la particion primaria
 	if primaryPartition.Status != 0 {
 		partitionSize = primaryPartition.Size
@@ -140,8 +133,46 @@ func Mkfs(idPart string, Type string) {
 	}
 	//Aplicamos la formateada full de la particion
 	writeFormat(file, partitionStart, partitionSize)
+	//Creamos el superbloque
+	sb := createSB(partitionName, partitionSize, partitionStart)
+	//Procedemos a escribir en el disco el superboot asignado a esa particion
+	writeSB(file, partitionStart, &sb)
+	//[a] Creamos la carpeta '/'
+	timestamp := time.Now().Format("2006-01-02 15:04:05")
+	folder := virtualDirectoryTree{
+		Subdirectories:         [6]int64{-1, -1, -1, -1, -1, -1},
+		PrDirectoryDetail:      0,
+		PrVirtualDirectoryTree: -1,
+	}
+	copy(folder.CreatedAt[:], timestamp)
+	copy(folder.DirectoryName[:], "/")
+	//Escribimos el arbol virtual de directorio de '/'
+	writeVDT(file, sb.PrDirectoryTree, &folder)
+	//Reescribimos el bitmap de arbol virtual de directorios
+	bitMapVDT := []byte{'1'}
+	writeBitmap(file, sb.PrDirectoryTreeBitmap, bitMapVDT)
+	//[b] Creamos el detalle directorio de la carpeta '/'
+	dd := structDD()
+	//Escribimos el arbol virtual de directorio de '/'
+	writeDD(file, sb.PrDirectoryDetail, &dd)
+	//Reescribimos el bitmap de detellae de directorio
+	bitMapDD := []byte{'1'}
+	writeBitmap(file, sb.PrDirectoryDetailBitmap, bitMapDD)
+	file.Close()
+	fmt.Println("[-] Formateo exitoso.")
+}
+
+//Funcion para crear un superbloque
+func createSB(partitionName string, partitionSize int64, partitionStart int64) superBoot {
+	//Tamaños de las estructuras
+	superBootSize := int64(binary.Size(superBoot{}))
+	virtualTreeSize := int64(binary.Size(virtualDirectoryTree{}))
+	directoryDetailSize := int64(binary.Size(directoryDetail{}))
+	iNodeSize := int64(binary.Size(iNode{}))
+	blockSize := int64(binary.Size(dataBlock{}))
+	logSize := int64(binary.Size(bitacora{}))
 	//Calculamos el numero de estructuras
-	numberOfStructures = (partitionSize - 2*superBootSize) / (27 + virtualTreeSize + directoryDetailSize + 5*iNodeSize + 20*blockSize + logSize)
+	numberOfStructures := (partitionSize - 2*superBootSize) / (27 + virtualTreeSize + directoryDetailSize + 5*iNodeSize + 20*blockSize + logSize)
 	//Creamos el superbloque para esta particion
 	sb := superBoot{}
 	//Nombre del disco duro virtual
@@ -185,30 +216,7 @@ func Mkfs(idPart string, Type string) {
 	sb.FirstFreeBitBlocks = 0
 	//Numero magico : Carnet
 	copy(sb.MagicNum[:], "201807190")
-	//Procedemos a escribir en el disco el superboot asignado a esa particion
-	writeSB(file, partitionStart, &sb)
-	//[a] Creamos la carpeta '/'
-	folder := virtualDirectoryTree{
-		Subdirectories:         [6]int64{-1, -1, -1, -1, -1, -1},
-		PrDirectoryDetail:      0,
-		PrVirtualDirectoryTree: -1,
-	}
-	copy(folder.CreatedAt[:], timestamp)
-	copy(folder.DirectoryName[:], "/")
-	//Escribimos el arbol virtual de directorio de '/'
-	writeVDT(file, sb.PrDirectoryTree, &folder)
-	//Reescribimos el bitmap de arbol virtual de directorios
-	bitMapVDT := []byte{'1'}
-	writeBitmap(file, sb.PrDirectoryTreeBitmap, bitMapVDT)
-	//[b] Creamos el detalle directorio de la carpeta '/'
-	dd := structDD()
-	//Escribimos el arbol virtual de directorio de '/'
-	writeDD(file, sb.PrDirectoryDetail, &dd)
-	//Reescribimos el bitmap de detellae de directorio
-	bitMapDD := []byte{'1'}
-	writeBitmap(file, sb.PrDirectoryDetailBitmap, bitMapDD)
-	file.Close()
-	fmt.Println("[-] Formateo exitoso.")
+	return sb
 }
 
 /*
@@ -276,6 +284,15 @@ func writeBlock(file *os.File, index int64, data *dataBlock) {
 	//Empezamos el proceso de guardar en binario la data en memoria del struct
 	var binaryDisc bytes.Buffer
 	binary.Write(&binaryDisc, binary.BigEndian, data)
+	writeNextBytes(file, binaryDisc.Bytes())
+}
+
+//Funcion para escribir en el archivo la estructura de un i-nodo
+func writeBitacora(file *os.File, index int64, log *bitacora) {
+	file.Seek(index, 0)
+	//Empezamos el proceso de guardar en binario la data en memoria del struct
+	var binaryDisc bytes.Buffer
+	binary.Write(&binaryDisc, binary.BigEndian, log)
 	writeNextBytes(file, binaryDisc.Bytes())
 }
 
@@ -364,4 +381,51 @@ func getBlock(file *os.File, pr int64, bm int64) dataBlock {
 		log.Fatal("binary.Read failed", err)
 	}
 	return block
+}
+
+//Funcion para recuperar un un bloque de datos
+func getBitacora(file *os.File, pr int64, bm int64) (bitacora, int64) {
+	bita := bitacora{}
+	size := int64(binary.Size(bita))
+	index := pr + bm*size
+	file.Seek(index, 0)
+	//Se obtiene la data del archivo binarios
+	data := readNextBytes(file, size)
+	buffer := bytes.NewBuffer(data)
+	//Se asigna al mbr declarado para leer la informacion de ese disco
+	err := binary.Read(buffer, binary.BigEndian, &bita)
+	if err != nil {
+		log.Fatal("binary.Read failed", err)
+	}
+	return bita, index
+}
+
+//Funcion para recorrer la bitacora y obtener el ultimo punto libre
+func getFreeLog(file *os.File, index int64, limit int64) int64 {
+	//Obtenemos la bitacora inicial
+	bita, pr := getBitacora(file, index, 0)
+	for i := 1; bita.TransactionDate != [19]byte{}; i++ {
+		//Obtenemos la siguiente bitacora
+		bita, pr = getBitacora(file, index, int64(i))
+	}
+	limit = limit*int64(binary.Size(bita)) + index - int64(binary.Size(bita))
+	if pr > limit {
+		return -1 
+	}
+	return pr
+}
+
+
+//Funcion que te devuelve un struct virtual directory tree
+func structLog(operation string, content string, name string, size int64, Type byte) bitacora {
+	timestamp := time.Now().Format("2006-01-02 15:04:05")
+	bita := bitacora{
+		Type: Type,
+		Size: size,
+	}
+	copy(bita.Operation[:], operation)
+	copy(bita.Content[:], content)
+	copy(bita.Name[:], name)
+	copy(bita.TransactionDate[:], timestamp)
+	return bita
 }

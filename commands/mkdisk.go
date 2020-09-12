@@ -52,7 +52,6 @@ func MKDisk(path string, name string, size int64, unit byte) {
 	}
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
 	copy(mbr.CreatedAt[:], timestamp)
-
 	//Guardamos el contenido del mbr generado en memorio
 	mk := &mbr
 	file.Seek(0, 0)
@@ -69,12 +68,6 @@ func writeNextBytes(file *os.File, bytes []byte) {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-//Funcion para imprimir el mbr
-func GetAttributes(mbr masterBootRecord) {
-	//fmt.Println(mbr)
-	fmt.Printf("Tamaño: %d\nFecha de creacion: %s\nSignature: %d\n", mbr.Size, mbr.CreatedAt, mbr.DiskSignature)
 }
 
 //Funcion para crear directorio si es que no existe

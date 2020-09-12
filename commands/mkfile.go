@@ -75,6 +75,7 @@ func Mkfile(id string, route string, p bool, size int64, txt string) {
 	}
 	if index == -1 {
 		fmt.Println("[ERROR]: El directorio donde se desea crear el archivo no existe.")
+		file.Close()
 		return
 	}
 	//Obtenemos el detalle de directorio
@@ -98,6 +99,14 @@ func Mkfile(id string, route string, p bool, size int64, txt string) {
 	}
 	//Reescribimos el superboot
 	writeSB(file, indexSB, &sb)
+	//Agregamos la accion a la bitacora
+	indexLog := getFreeLog(file, sb.PrLog, sb.VirtualTreeCount)
+	if indexLog != -1 {
+		//Creamos la bitacora de este proceso
+		bita := structLog("MKFILE", txt, route, int64(len(txt)), 'F')
+		//Escribimos la bitacora
+		writeBitacora(file, indexLog, &bita)
+	}
 	file.Close()
 	fmt.Println("[-] El archivo \"", route, "\" ha sido creado con exito.")
 }

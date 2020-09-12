@@ -72,6 +72,9 @@ func Reports(id string, rep string, path string, route string) {
 			fmt.Println("[REPORT] Creando reporte de TREE_FILE.")
 			report, err = reportTreeFile(file, sb, route)
 		}
+	case "BITACORA":
+		fmt.Println("[REPORT] Creando reporte de BITACORA.")
+		report = reportLog(file, sb)
 	default:
 		fmt.Println("[ERROR]: El tipo de reporte a crear no existe |", rep, "|.")
 		err = fmt.Errorf("ERROR")
@@ -662,6 +665,10 @@ func vdtTable(vdt virtualDirectoryTree, bm int64) string {
 		dot += strconv.FormatInt(vdt.Subdirectories[i], 10)
 		dot += "</td></tr>\n"
 	}
+	//Fecha de creacion
+	dot += "\t<tr><td>Creacion</td><td>"
+	dot += string(vdt.CreatedAt[:])
+	dot += "</td></tr>\n"
 	//Detalle de directorio
 	dot += "\t<tr><td bgcolor=\"#7ab648\">detalle_D</td><td PORT=\"7\">"
 	dot += strconv.FormatInt(vdt.PrDirectoryDetail, 10)
@@ -897,6 +904,58 @@ func blockModel(file *os.File, sb superBoot, index int64) string {
 	dot += "\t<tr><td colspan=\"2\" PORT=\"1\">"
 	dot += strings.Replace(string(block.Data[:]), "\x00", "", -1)
 	dot += "</td></tr>\n"
+	dot += "</table>\n>];\n"
+	return dot
+}
+
+//Reporte de la bitacora del sistema de archivos
+func reportLog(file *os.File, sb superBoot) string {
+	//Empezamos a escribir el reporte
+	var dot string = "digraph REP_TREEFILE{\nrankdir = LR;\n node [shape=plain, fontsize=20];\n ranksep = 2;\n\n"
+	//Obtenemos la bitacora inicial
+	bita, _ := getBitacora(file, sb.PrLog, 0)
+	for i := 1; bita.TransactionDate != [19]byte{}; i++ {
+		dot += logModel(bita, int64(i))
+		//Obtenemos la siguiente bitacora
+		bita, _ = getBitacora(file, sb.PrLog, int64(i))
+	}
+	dot += "}"
+	return dot
+}
+
+//Funcion que genera la estructura de un log de cambios de la bitacora
+func logModel(bita bitacora, index int64) string {
+	dot := "L"
+	dot += strconv.FormatInt(index, 10)
+	dot += "[color=\"#ffbbb1\"  label=<\n"
+	dot += "<table border=\"0\" cellborder=\"1\" cellpadding=\"10\">\n"
+	//Numero de log
+	dot += "\t<tr><td bgcolor=\"#ffbbb1\" colspan=\"6\">Log "
+	dot += strconv.FormatInt(index, 10)
+	dot += "</td></tr>\n"
+	//Atributos
+	dot += "\t<tr><td>Operacion</td><td>Tipo</td><td>Path</td><td>Contenido</td><td>Fecha log</td><td>Size</td></tr>\n"
+	//Contenido de la bitacora
+	dot += "\t<tr>"
+	dot += "<td>"
+	dot += strings.Replace(string(bita.Operation[:]), "\x00", "", -1)
+	dot += "</td>"
+	dot += "<td>"
+	dot += string(bita.Type)
+	dot += "</td>"
+	dot += "<td>"
+	dot += strings.Replace(string(bita.Name[:]), "\x00", "", -1)
+	dot += "</td>"
+	dot += "<td>"
+	dot += strings.Replace(string(bita.Content[:]), "\x00", "", -1)
+	dot += "</td>"
+	dot += "<td>"
+	dot += string(bita.TransactionDate[:])
+	dot += "</td>"
+	dot += "<td>"
+	dot += strconv.FormatInt(bita.Size, 10)
+	dot += "</td>"
+	dot += "</tr>\n"
 	dot += "</table>\n>];\n"
 	return dot
 }
