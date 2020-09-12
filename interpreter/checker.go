@@ -276,7 +276,17 @@ func controlCommands(command param) {
 		if command.add != "" && command.delete == "" {
 			fmt.Println("Se hara un add a una particion")
 		} else if command.delete != "" && command.add == "" {
-			fmt.Println("Se hara el delete de una particion")
+			if requiredParameters([]string{"PATH", "NAME"}, command) != nil {
+				return
+			}
+			if command.delete == "FAST" {
+				commands.FDiskDelete(command.path, false, command.name)
+			} else if command.delete == "FULL" {
+				commands.FDiskDelete(command.path, true, command.name)
+			} else {
+				fmt.Println("[ERROR]: El comando FDISK proporciona un error en su estructura al tratar de eliminar")
+				return
+			}
 		} else if command.delete == "" && command.add == "" {
 			if requiredParameters([]string{"SIZE", "PATH", "NAME"}, command) != nil {
 				return

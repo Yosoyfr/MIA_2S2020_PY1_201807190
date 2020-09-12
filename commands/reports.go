@@ -193,54 +193,57 @@ func reportMBR(file *os.File, mbr masterBootRecord) string {
 		}
 	}
 	dot += "</TABLE>\n>];\n"
-
-	//EBR aux
-	ebr := extendedBootRecord{}
-	indexEBR := mbr.Partitions[indexExtended].Start
 	if indexExtended != -1 {
-		for i := 1; true; i++ {
-			file.Seek(indexEBR, 0)
-			//Se obtiene la data del archivo binario
-			data := readNextBytes(file, int64(binary.Size(ebr)))
-			buffer := bytes.NewBuffer(data)
-			err := binary.Read(buffer, binary.BigEndian, &ebr)
-			if err != nil {
-				log.Fatal("binary.Read failed", err)
+		//EBR aux
+		ebr := extendedBootRecord{}
+		indexEBR := mbr.Partitions[indexExtended].Start
+		if indexExtended != -1 {
+			for i := 1; true; i++ {
+				file.Seek(indexEBR, 0)
+				//Se obtiene la data del archivo binario
+				data := readNextBytes(file, int64(binary.Size(ebr)))
+				buffer := bytes.NewBuffer(data)
+				err := binary.Read(buffer, binary.BigEndian, &ebr)
+				if err != nil {
+					log.Fatal("binary.Read failed", err)
+				}
+				if ebr.Status != 0 {
+					//Informacion de los EBR's
+					dot += "subgraph cluster_"
+					dot += strconv.Itoa(i)
+					dot += "{\n label=\"EBR_"
+					dot += strconv.Itoa(i)
+					dot += "\"\n"
+					dot += "\ntbl_"
+					dot += strconv.Itoa(i)
+					dot += "[shape=box, label=<\n "
+					dot += "<TABLE border='0' cellborder='1' cellspacing='0'  width='300' height='160' >\n "
+					dot += "<tr>  <td width='150'><b>Nombre</b></td> <td width='150'><b>Valor</b></td>  </tr>\n"
+					dot += "<tr>  <td><b>part_status</b></td> <td>"
+					dot += "1"
+					dot += "</td>  </tr>\n"
+					dot += "<tr>  <td><b>part_fit</b></td> <td>"
+					dot += string(ebr.Fit)
+					dot += "</td>  </tr>\n"
+					dot += "<tr>  <td><b>part_start</b></td> <td>"
+					dot += strconv.FormatInt(ebr.Start, 10)
+					dot += "</td>  </tr>\n"
+					dot += "<tr>  <td><b>part_size</b></td> <td>"
+					dot += strconv.FormatInt(ebr.Size, 10)
+					dot += "</td>  </tr>\n"
+					dot += "<tr>  <td><b>part_next</b></td> <td>"
+					dot += strconv.FormatInt(ebr.Next, 10)
+					dot += "</td>  </tr>\n"
+					dot += "<tr>  <td><b>part_name</b></td> <td>"
+					dot += strings.Replace(string(ebr.Name[:]), "\x00", "", -1)
+					dot += "</td>  </tr>\n"
+					dot += "</TABLE>\n>];\n}\n"
+				}
+				if ebr.Next == -1 {
+					break
+				}
+				indexEBR = ebr.Next
 			}
-			//Informacion de los EBR's
-			dot += "subgraph cluster_"
-			dot += strconv.Itoa(i)
-			dot += "{\n label=\"EBR_"
-			dot += strconv.Itoa(i)
-			dot += "\"\n"
-			dot += "\ntbl_"
-			dot += strconv.Itoa(i)
-			dot += "[shape=box, label=<\n "
-			dot += "<TABLE border='0' cellborder='1' cellspacing='0'  width='300' height='160' >\n "
-			dot += "<tr>  <td width='150'><b>Nombre</b></td> <td width='150'><b>Valor</b></td>  </tr>\n"
-			dot += "<tr>  <td><b>part_status</b></td> <td>"
-			dot += "1"
-			dot += "</td>  </tr>\n"
-			dot += "<tr>  <td><b>part_fit</b></td> <td>"
-			dot += string(ebr.Fit)
-			dot += "</td>  </tr>\n"
-			dot += "<tr>  <td><b>part_start</b></td> <td>"
-			dot += strconv.FormatInt(ebr.Start, 10)
-			dot += "</td>  </tr>\n"
-			dot += "<tr>  <td><b>part_size</b></td> <td>"
-			dot += strconv.FormatInt(ebr.Size, 10)
-			dot += "</td>  </tr>\n"
-			dot += "<tr>  <td><b>part_next</b></td> <td>"
-			dot += strconv.FormatInt(ebr.Next, 10)
-			dot += "</td>  </tr>\n"
-			dot += "<tr>  <td><b>part_name</b></td> <td>"
-			dot += strings.Replace(string(ebr.Name[:]), "\x00", "", -1)
-			dot += "</td>  </tr>\n"
-			dot += "</TABLE>\n>];\n}\n"
-			if ebr.Next == -1 {
-				break
-			}
-			indexEBR = ebr.Next
 		}
 	}
 	dot += "}\n"
@@ -269,15 +272,8 @@ func reportDisk(file *os.File, mbr masterBootRecord) string {
 				indexEBR := part.Start
 				//Recorremos cada una de los ebr para agregar las particiones logicas
 				for i := 1; true; i++ {
-					nLogics = i
-					file.Seek(indexEBR, 0)
-					//Se obtiene la data del archivo binario
-					data := readNextBytes(file, int64(binary.Size(ebr)))
-					buffer := bytes.NewBuffer(data)
-					err := binary.Read(buffer, binary.BigEndian, &ebr)
-					if err != nil {
-						log.Fatal("binary.Read failed", err)
-					}
+					nLogics++
+					ebr = getEBR(file, indexEBR)
 					//Porcentaje que ocupa esta particion logica
 					percentage := float64(ebr.Size) * 100 / float64(mbr.Size)
 					//Informacion de los EBR's
@@ -295,6 +291,7 @@ func reportDisk(file *os.File, mbr masterBootRecord) string {
 							dotAux += "%</td>\n"
 						}
 					}
+					//Cuando encontramos a la ultima particion logica
 					if ebr.Next == -1 {
 						//Porcentaje libre luego de encontrar la ultima logica
 						freeExtended := float64(part.Start + part.Size - (ebr.Start - int64(binary.Size(ebr))) - ebr.Size)
@@ -308,6 +305,21 @@ func reportDisk(file *os.File, mbr masterBootRecord) string {
 							nLogics = 0
 						}
 						break
+					} else {
+						//Si existe algun espacio muerto entre dos particiones logicas
+						pr := ebr.Start + ebr.Size
+						nEBR := getEBR(file, ebr.Next)
+						if pr != nEBR.Start {
+							//Porcentaje libre entre ese espacio encontrado
+							nLogics++
+							freeExtended := nEBR.Start - pr
+							percentage := float64(freeExtended) * 100 / float64(mbr.Size)
+							if percentage != 0 {
+								dotAux += " <td height='200' width='150'>LIBRE <br/> Porcentaje: "
+								dotAux += fmt.Sprintf("%f", percentage)
+								dotAux += "% </td>\n"
+							}
+						}
 					}
 					indexEBR = ebr.Next
 				}

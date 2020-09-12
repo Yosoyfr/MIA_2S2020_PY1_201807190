@@ -21,10 +21,14 @@ import (
 //Funcion Main
 func main() {
 	//interpreterF(interpreter.ReadMIAFile("/home/yosoyfr/MIA/test_discos/input.mia"))
-	//interpreterF(interpreter.ReadMIAFile("/home/yosoyfr/MIA/discos/input.mia"))
+	interpreterF(interpreter.ReadMIAFile("/home/yosoyfr/MIA/discos/input.mia"))
 	//Prueba de leer consola
 	//readConsole()
-	commands.FDiskDelete("/home/yosoyfr/MIA/discos/Disco1.dsk", "fast", "Logica3")
+	//commands.FDisk("/home/yosoyfr/MIA/discos/Disco1.dsk", 1, 'M', 'L', 'W', "Logica4")
+	commands.FDiskDelete("/home/yosoyfr/MIA/discos/Disco1.dsk", true, "Extendida")
+	//commands.Mount("/home/yosoyfr/MIA/discos/Disco1.dsk", "Particion1")
+	commands.Reports("vda1", "MBR", "/home/yosoyfr/MIA/discos/mbr2.pdf", "")
+	commands.Reports("vda1", "DISK", "/home/yosoyfr/MIA/discos/disk2.pdf", "")
 }
 
 func readConsole() {

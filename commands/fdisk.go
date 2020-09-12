@@ -266,7 +266,7 @@ func FDisk(path string, size int64, unit byte, typeF byte, fit byte, name string
 }
 
 //Funcion para eliminar particiones
-func FDiskDelete(path string, delete string, name string) {
+func FDiskDelete(path string, full bool, name string) {
 	//Obtenemos el mbr del disco
 	file, mbr, err := readFile(path)
 	if err != nil {
@@ -275,12 +275,16 @@ func FDiskDelete(path string, delete string, name string) {
 	// Obtenemos el nombre de la particion a buscar
 	var findname [16]byte
 	copy(findname[:], name)
+	//Variable que identifica si fue encontrada la particion
+	find, size := int64(-1), int64(-1)
 	//Recorremos todos las particiones creadas
-	for _, part := range mbr.Partitions {
+	for i, part := range mbr.Partitions {
 		//En dado caso la particion se encuentra entre las primarias y la extendida
 		if part.Name == findname {
-			//mbr.Partitions[i] = partition{}
-			fmt.Println("Encontrado xd", part.Start)
+			mbr.Partitions[i] = partition{Size: part.Size}
+			writeMBR(file, &mbr)
+			find = part.Start
+			size = part.Size
 			break
 		}
 		//Si en dado la particion se encuentra entre las logicas
@@ -293,23 +297,43 @@ func FDiskDelete(path string, delete string, name string) {
 				//Recuperamos el ebr que vamos analizar
 				ebr = getEBR(file, index)
 				if ebr.Name == findname {
-					fmt.Println("Encontrado xd", ebr.Start)
 					//Le cambiamos el apuntador del siquiente al anterior
 					prev.Next = ebr.Next
+					find = ebr.Start
+					size = ebr.Size - int64(binary.Size(ebr))
 					break
 				}
 				prev = ebr
 				index = ebr.Next
 			}
+			//Verificamos que la particion haya sido encontrada
+			if find == -1 {
+				fmt.Println("[ERROR]: La particion no fue encontrada.")
+				break
+			}
 			//Verificamos cual es el anterior a editar
 			if index != part.Start {
-				fmt.Println(prev)
+				i := prev.Start - int64(binary.Size(ebr))
+				writeEBR(file, i, &prev)
 			} else {
-				fmt.Println("Es el inicial")
+				ebr.Fit = 0
+				ebr.Name = [16]byte{}
+				ebr.Size = 0
+				ebr.Status = 0
+				writeEBR(file, index, &ebr)
 			}
 		}
 	}
+	//Aplicamos el formateo full si nos lo solicitan
+	if size != -1 && full {
+		writeFormat(file, find, size)
+	}
 	file.Close()
+	if find == -1 {
+		return
+	}
+	//Aplicamos el formateo
+	fmt.Println("[-] La particion", name, "fue eliminada con exito.")
 }
 
 //Funcion para calcular el valor de un tamaño a partir de la unidad definida
@@ -341,11 +365,20 @@ func getEBR(file *os.File, index int64) extendedBootRecord {
 	return ebr
 }
 
-//Funcion para escribir en el archivo la estructura de un i-nodo
+//Funcion para escribir en el archivo la estructura de un EBR
 func writeEBR(file *os.File, index int64, ebr *extendedBootRecord) {
 	file.Seek(index, 0)
 	//Empezamos el proceso de guardar en binario la data en memoria del struct
 	var binaryDisc bytes.Buffer
 	binary.Write(&binaryDisc, binary.BigEndian, ebr)
+	writeNextBytes(file, binaryDisc.Bytes())
+}
+
+//Funcion para escribir en el archivo la estructura de un EBR
+func writeMBR(file *os.File, mbr *masterBootRecord) {
+	file.Seek(0, 0)
+	//Empezamos el proceso de guardar en binario la data en memoria del struct
+	var binaryDisc bytes.Buffer
+	binary.Write(&binaryDisc, binary.BigEndian, mbr)
 	writeNextBytes(file, binaryDisc.Bytes())
 }
