@@ -165,11 +165,11 @@ func paramDesigned(parameter *lexmachine.Token, paramType string, aux param) (pa
 			fmt.Println("[ERROR]: Ya existe un NAME asignado", string(parameter.Lexeme))
 			return aux, fmt.Errorf("Error")
 		}
-		if tokens[parameter.Type] != "ID" {
-			fmt.Println("[ERROR]: Se esperaba un ID")
+		if tokens[parameter.Type] != "ID" && tokens[parameter.Type] != "ROUTE" {
+			fmt.Println("[ERROR]: Se esperaba un ID o una cadena")
 			return aux, fmt.Errorf("Error")
-		}
-		aux.name = string(parameter.Lexeme)
+		} 
+		aux.name = strings.Replace(string(parameter.Lexeme), "\"", "", -1)
 	} else if paramType == "UNIT" {
 		aux.unit = strings.ToUpper(string(parameter.Lexeme))[0]
 	} else if paramType == "TYPE" {
@@ -331,6 +331,11 @@ func controlCommands(command param) {
 			return
 		}
 		commands.Cat(command.id, command.filen)
+	case "REN":
+		if requiredParameters([]string{"ID", "PATH", "NAME"}, command) != nil {
+			return
+		}
+		commands.Ren(command.id, command.path, command.name)
 	case "REP":
 		if requiredParameters([]string{"NAME", "PATH", "ID"}, command) != nil {
 			return
@@ -426,6 +431,6 @@ func validUnitTypes(command param) (param, error) {
 }
 
 func systemPaused() {
-	fmt.Print("[ALERTA] El sistema a pausado toda ejecucion, presione ENTER para continuar con la ejecucion.")
+	fmt.Print("[PAUSE] El sistema a pausado toda ejecucion, presione ENTER para continuar con la ejecucion.")
 	bufio.NewScanner(os.Stdin).Scan()
 }

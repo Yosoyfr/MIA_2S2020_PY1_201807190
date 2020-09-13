@@ -133,7 +133,7 @@ func reportBM(id string, rep string, path string, route string) {
 	}
 	//Creamos el archivo que representa el reporte de bitmap
 	createReportBM(path, bitmap)
-	fmt.Println("[REPORT] El reporte ha sido generado con exito.")
+	fmt.Println("[BITMAP] El reporte ha sido generado con exito.")
 }
 
 func reportMBR(file *os.File, mbr masterBootRecord) string {
