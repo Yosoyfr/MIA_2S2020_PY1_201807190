@@ -32,10 +32,10 @@ func Cat(id string, files []string) {
 	for i, route := range files {
 		aux := getDataFile(file, sb, root, route)
 		if aux != "" {
-			data += " (" + strconv.Itoa(i + 1) + ") "
+			data += " (" + strconv.Itoa(i+1) + ") "
 			data += " [" + route + "]-> "
-			data +=  aux + "\n"
-			txt += " (" + strconv.Itoa(i + 1) + ") " + aux + "\n"
+			data += aux + "\n"
+			txt += " (" + strconv.Itoa(i+1) + ") " + aux + "\n"
 		}
 	}
 	file.Close()
@@ -49,6 +49,11 @@ func Cat(id string, files []string) {
 }
 
 func getDataFile(file *os.File, sb superBoot, vdt virtualDirectoryTree, route string) string {
+	//Revismos que la ruta a insertar sea correcta
+	if route[0] != '/' {
+		fmt.Println("[ERROR] El path no es valido.")
+		return ""
+	}
 	//Obtenemos las carpetas
 	folders := strings.Split(route, "/")
 	folders = folders[1:]
