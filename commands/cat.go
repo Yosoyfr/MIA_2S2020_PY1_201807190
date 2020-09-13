@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -26,14 +27,25 @@ func Cat(id string, files []string) {
 	//Recuperamos el arbol de directorio de '/'
 	root := getVirtualDirectotyTree(file, sb.PrDirectoryTree, 0)
 	var data string
+	var txt string
 	//Recorremos todos los archivos a buscar
 	for i, route := range files {
-		data += " [" + strconv.Itoa(i) + "] "
-		data += getDataFile(file, sb, root, route) + "\n"
+		aux := getDataFile(file, sb, root, route)
+		if aux != "" {
+			data += " (" + strconv.Itoa(i + 1) + ") "
+			data += " [" + route + "]-> "
+			data +=  aux + "\n"
+			txt += " (" + strconv.Itoa(i + 1) + ") " + aux + "\n"
+		}
 	}
 	file.Close()
 	fmt.Println("[-] Estos son los datos en los archivos a buscar:")
-	fmt.Println(data)
+	fmt.Print(data)
+	// Escribir la data de los archivos en un txt
+	err = ioutil.WriteFile("files.txt", []byte(txt), 0644)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func getDataFile(file *os.File, sb superBoot, vdt virtualDirectoryTree, route string) string {
@@ -52,13 +64,17 @@ func getDataFile(file *os.File, sb superBoot, vdt virtualDirectoryTree, route st
 		index = vdt.PrDirectoryDetail
 	}
 	if index == -1 {
-		fmt.Println("[ERROR]: El directorio no existe.")
+		fmt.Println("[ERROR]: El directorio", route, "no existe.")
 		return ""
 	}
 	//Obtenemos el detalle de directorio
 	dd := getDirectotyDetail(file, sb.PrDirectoryDetail, index)
 	//Recuperamos el puntero del inodo donde se encuentra el archivo
 	nInode, _ := searchFile(file, sb, dd, filename)
+	if nInode == -1 {
+		fmt.Println("[ERROR]: El archivo", route, "no existe.")
+		return ""
+	}
 	//Obtenemos el inodo
 	inode := getInode(file, sb.PrInodeTable, nInode)
 	//Recuperamos los bloques de datos

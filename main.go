@@ -25,11 +25,12 @@ func main() {
 	//Prueba de leer consola
 	//readConsole()
 	//commands.FDisk("/home/yosoyfr/MIA/discos/Disco1.dsk", 1, 'M', 'L', 'W', "Logica4")
-	commands.FDiskDelete("/home/yosoyfr/MIA/discos/Disco1.dsk", true, "Extendida")
+	//commands.FDiskDelete("/home/yosoyfr/MIA/discos/Disco1.dsk", true, "Extendida")
 	//commands.Mount("/home/yosoyfr/MIA/discos/Disco1.dsk", "Particion1")
-	commands.Reports("vda1", "MBR", "/home/yosoyfr/MIA/discos/mbr2.pdf", "")
-	commands.Reports("vda1", "DISK", "/home/yosoyfr/MIA/discos/disk2.pdf", "")
-	commands.Reports("vda1", "BITACORA", "/home/yosoyfr/MIA/discos/log.pdf", "")
+	//commands.Cat("vda1", []string{"/bin/t6.txt", "/bin/t1.txt", "/home/user/docs/usac/tacos.txt"})
+	//commands.Reports("vda1", "MBR", "/home/yosoyfr/MIA/discos/mbr2.pdf", "")
+	//commands.Reports("vda1", "DISK", "/home/yosoyfr/MIA/discos/disk2.pdf", "")
+	//commands.Reports("vda1", "BITACORA", "/home/yosoyfr/MIA/discos/log.pdf", "")
 }
 
 func readConsole() {

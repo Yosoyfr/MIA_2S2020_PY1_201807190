@@ -226,7 +226,7 @@ func paramDesigned(parameter *lexmachine.Token, paramType string, aux param) (pa
 			fmt.Println("[ERROR]: Se esperaba una ruta.")
 			return aux, fmt.Errorf("Error")
 		}
-		aux.filen = append(aux.filen, string(parameter.Lexeme))
+		aux.filen = append(aux.filen, strings.Replace(string(parameter.Lexeme), "\"", "", -1))
 	} else if paramType == "RUTA" {
 		if tokens[parameter.Type] != "ROUTE" {
 			fmt.Println("[ERROR]: Se esperaba una ruta.")
@@ -330,7 +330,7 @@ func controlCommands(command param) {
 		if requiredParameters([]string{"ID", "FILEN"}, command) != nil {
 			return
 		}
-		fmt.Println("Hara el cat")
+		commands.Cat(command.id, command.filen)
 	case "REP":
 		if requiredParameters([]string{"NAME", "PATH", "ID"}, command) != nil {
 			return
