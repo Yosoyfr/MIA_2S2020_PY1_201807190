@@ -550,19 +550,19 @@ func vdtModel(file *os.File, sb superBoot, index int64) string {
 func reportTreeComplete(file *os.File, sb superBoot) string {
 	var dot string = "digraph REP_VDT{\nrankdir = LR;\n node [shape=plain, fontsize=20];\n ranksep = 2;\n\n"
 	//Empezamos a escribir el reporte
-	dot += completeModel(file, sb, 0)
+	dot += completeModel(file, sb, 0, false)
 	dot += "}"
 	return dot
 }
 
 //Modelo completo de todo los directorios con su detalle y archivos
-func completeModel(file *os.File, sb superBoot, index int64) string {
+func completeModel(file *os.File, sb superBoot, index int64, indirect bool) string {
 	vdt := getVirtualDirectotyTree(file, sb.PrDirectoryTree, index)
 	dot := vdtTable(vdt, index)
 	//Creamos los subdirecotrios
 	for i := 0; i < len(vdt.Subdirectories); i++ {
 		if vdt.Subdirectories[i] != -1 {
-			dot += completeModel(file, sb, vdt.Subdirectories[i])
+			dot += completeModel(file, sb, vdt.Subdirectories[i], false)
 			dot += "N"
 			dot += strconv.FormatInt(index, 10)
 			dot += ":"
@@ -572,26 +572,28 @@ func completeModel(file *os.File, sb superBoot, index int64) string {
 			dot += ":0;\n"
 		}
 	}
+	if !indirect {
+		//Creamos los detalles de directorios
+		dot += ddModel(file, sb, vdt.PrDirectoryDetail, vdt.DirectoryName)
+		//Asignamos el detalle de directorio
+		dot += "N"
+		dot += strconv.FormatInt(index, 10)
+		dot += ":7"
+		dot += " -> D"
+		dot += strconv.FormatInt(vdt.PrDirectoryDetail, 10)
+		dot += ":0;\n"
+		//Construimos los inodos
+		dot += inodesModel(file, sb, vdt.PrDirectoryDetail)
+	}
 	//Creamos el indirecto si es que existe
 	if vdt.PrVirtualDirectoryTree != -1 {
-		dot += vdtModel(file, sb, vdt.PrVirtualDirectoryTree)
+		dot += completeModel(file, sb, vdt.PrVirtualDirectoryTree, true)
 		dot += "N"
 		dot += strconv.FormatInt(index, 10)
 		dot += ":8-> N"
 		dot += strconv.FormatInt(vdt.PrVirtualDirectoryTree, 10)
 		dot += ":0;\n"
 	}
-	//Creamos los detalles de directorios
-	dot += ddModel(file, sb, index, vdt.DirectoryName)
-	//Asignamos el detalle de directorio
-	dot += "N"
-	dot += strconv.FormatInt(index, 10)
-	dot += ":7"
-	dot += " -> D"
-	dot += strconv.FormatInt(vdt.PrDirectoryDetail, 10)
-	dot += ":0;\n"
-	//Construimos los inodos
-	dot += inodesModel(file, sb, vdt.PrDirectoryDetail)
 	return dot
 }
 
@@ -618,21 +620,21 @@ func reportDirectoryTree(file *os.File, sb superBoot, path string) (string, erro
 //Funcion que construye el arbol de directorio con su detalle de directorio
 func buildDirectoryTree(file *os.File, sb superBoot, root virtualDirectoryTree, folders []string) (string, int64) {
 	var index int64
-	var aux string
+	//var aux string
 	var foldername [20]byte
 	var pr int64
 	//Obtenemos la raiz
-	dot := vdtTable(root, 0)
+	dot := auxiliarVDT(file, sb, 0, folders)
 	//Si existe mas subdirectorios realizamos la iteracion o en dado caso es el detalle de la raiz '/'
 	if len(folders) > 0 && folders[0] != "" {
-		index, aux, foldername, pr = directoryTreeModel(file, &sb, root, folders, 0)
+		index, _, foldername, pr = directoryTreeModel(file, &sb, root, folders, 0)
 	} else {
-		index, aux, foldername, pr = root.PrDirectoryDetail, "", root.DirectoryName, 0
+		index, _, foldername, pr = root.PrDirectoryDetail, "", root.DirectoryName, 0
 	}
 	//Obtenido el indice del detalle de directorio procedemos a crear su grafico
 	if index != -1 {
 		//Se incluyen los subdirectorios, si es que lo habian
-		dot += aux
+		//dot += aux
 		//Se crea el grafico de la estructura
 		dot += ddModel(file, sb, index, foldername)
 		//Asignamos el detalle de directorio
@@ -716,6 +718,47 @@ func directoryTreeModel(file *os.File, sb *superBoot, vdt virtualDirectoryTree, 
 	return -1, "", [20]byte{}, -1
 }
 
+func auxiliarVDT(file *os.File, sb superBoot, index int64, folders []string) string {
+	//Obtenemos el vdt del indice
+	vdt := getVirtualDirectotyTree(file, sb.PrDirectoryTree, index)
+	//Creamos la estructura grafica
+	dot := vdtTable(vdt, index)
+	if len(folders) == 0 {
+		return dot
+	}
+	//Casteamos el nombre del VDT
+	var auxVDT [20]byte
+	copy(auxVDT[:], folders[0])
+	//Buscamos en los subdirectorios la siguiente carpeta
+	for i := 0; i < len(vdt.Subdirectories); i++ {
+		if vdt.Subdirectories[i] != -1 {
+			aux := getVirtualDirectotyTree(file, sb.PrDirectoryTree, vdt.Subdirectories[i])
+			if aux.DirectoryName == auxVDT {
+				//Lo quitamos de la lista de carpetas
+				folders = folders[1:]
+				dot += auxiliarVDT(file, sb, vdt.Subdirectories[i], folders)
+				dot += "N"
+				dot += strconv.FormatInt(index, 10)
+				dot += ":"
+				dot += strconv.Itoa(i + 1)
+				dot += " -> N"
+				dot += strconv.FormatInt(vdt.Subdirectories[i], 10)
+				dot += ":0;\n"
+			}
+		}
+	}
+	//Creamos el indirecto si es que existe
+	if vdt.PrVirtualDirectoryTree != -1 {
+		dot += auxiliarVDT(file, sb, vdt.PrVirtualDirectoryTree, folders)
+		dot += "N"
+		dot += strconv.FormatInt(index, 10)
+		dot += ":8-> N"
+		dot += strconv.FormatInt(vdt.PrVirtualDirectoryTree, 10)
+		dot += ":0;\n"
+	}
+	return dot
+}
+
 //Funcion que genera la estructura de todo un detalle de directorio de una directorio
 func ddModel(file *os.File, sb superBoot, index int64, foldername [20]byte) string {
 	dot := "D"
@@ -770,7 +813,7 @@ func reportTreeFile(file *os.File, sb superBoot, path string) (string, error) {
 	folders = folders[1:]
 	//Obtenemos el nombre del archivo a representar
 	if !strings.HasSuffix(strings.ToLower(folders[len(folders)-1]), ".txt") {
-		fmt.Println("[ERROR] El file a buscar no es valido.")
+		fmt.Println("[ERROR] El archivo a buscar no es valido.")
 		return "", fmt.Errorf("ERROR")
 	}
 	var filename [20]byte

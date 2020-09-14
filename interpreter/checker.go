@@ -233,6 +233,12 @@ func paramDesigned(parameter *lexmachine.Token, paramType string, aux param) (pa
 			return aux, fmt.Errorf("Error")
 		}
 		aux.ruta = strings.Replace(string(parameter.Lexeme), "\"", "", -1)
+	} else if paramType == "DEST" {
+		if tokens[parameter.Type] != "ROUTE" {
+			fmt.Println("[ERROR]: Se esperaba una ruta.")
+			return aux, fmt.Errorf("Error")
+		}
+		aux.ruta = strings.Replace(string(parameter.Lexeme), "\"", "", -1)
 	} else {
 		fmt.Println("[ERROR]: En la lectura del comando", aux.paramType, "el parametro \"", paramType, "\" no esta permitido.")
 		return aux, fmt.Errorf("Error")
@@ -336,6 +342,11 @@ func controlCommands(command param) {
 			return
 		}
 		commands.Ren(command.id, command.path, command.name)
+	case "MV":
+		if requiredParameters([]string{"ID", "PATH"}, command) != nil {
+			return
+		}
+		commands.Mv(command.id, command.path, command.ruta)
 	case "REP":
 		if requiredParameters([]string{"NAME", "PATH", "ID"}, command) != nil {
 			return

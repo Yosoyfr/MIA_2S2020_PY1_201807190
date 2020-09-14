@@ -82,8 +82,10 @@ func Mkfile(id string, route string, p bool, size int64, txt string) {
 	dd := getDirectotyDetail(file, sb.PrDirectoryDetail, index)
 	//Obtenemos el detalle correspondiente
 	dd, index = firstFitDD(file, &sb, dd, index)
+	//Creamos el DDFILE
+	f := structDDF(filename, sb.FirstFreeBitInodeTable)
 	//Asignamos el archivo creado al detalle de directorio
-	assignmentFile(file, &sb, indexSB, &dd, filename)
+	assignmentFile(file, &sb, &dd, f)
 	indexDD := index*sb.SizeDirectoryDetail + sb.PrDirectoryDetail
 	//Procedemos a reescribir el detalle de directorio
 	writeDD(file, indexDD, &dd)
@@ -229,12 +231,7 @@ func existDetailDirectory(file *os.File, sb *superBoot, vdt virtualDirectoryTree
 }
 
 //Funcion para construir una estructrura de un inode y su DDfile
-func assignmentFile(file *os.File, sb *superBoot, indexSB int64, dd *directoryDetail, name string) {
-	//Casteamos el nombre del archivo
-	var filename [20]byte
-	copy(filename[:], name)
-	//Creamos el DDFILE
-	f := structDDF(filename, sb.FirstFreeBitInodeTable)
+func assignmentFile(file *os.File, sb *superBoot, dd *directoryDetail, f ddFile) {
 	created := false
 	//Asignamos el puntero
 	for i := 0; i < len(dd.Files); i++ {
@@ -250,7 +247,7 @@ func assignmentFile(file *os.File, sb *superBoot, indexSB int64, dd *directoryDe
 		dd.PrDirectoryDetail = sb.FirstFreeBitDirectoryDetail
 		//Creamos el detalle de directorio indirecto
 		indirect := structDD()
-		assignmentFile(file, sb, indexSB, &indirect, name)
+		assignmentFile(file, sb, &indirect, f)
 		//Obtenemos la posicion en donde sera escrito el detalle de directorio indirecto
 		indexPRDD := dd.PrDirectoryDetail*sb.SizeDirectoryDetail + sb.PrDirectoryDetail
 		//Procedemos a escribir en el disco el detalle de directorio indirecto
@@ -263,7 +260,10 @@ func assignmentFile(file *os.File, sb *superBoot, indexSB int64, dd *directoryDe
 }
 
 //Funcion que devuelve un struct Directory Detail File
-func structDDF(filename [20]byte, prInode int64) ddFile {
+func structDDF(name string, prInode int64) ddFile {
+	//Casteamos el nombre del archivo
+	var filename [20]byte
+	copy(filename[:], name)
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
 	f := ddFile{
 		Name:    filename,
