@@ -65,6 +65,7 @@ func Mkfile(id string, route string, p bool, size int64, txt string) {
 	if p && len(folders) > 0 {
 		createAllPath(file, &sb, indexSB, root, folders, 0)
 	}
+	root = getVirtualDirectotyTree(file, sb.PrDirectoryTree, 0)
 	//De lo contrario tendra que existir ya el directorio completo
 	//Procedemos a obtener el puntero del DD del directorio
 	var index int64

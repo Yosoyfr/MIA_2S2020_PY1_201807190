@@ -18,7 +18,7 @@ import (
 
 //Funcion Main
 func main() {
-	interpreterF(interpreter.ReadMIAFile("/home/yosoyfr/MIA/discos/input.mia"))
+	//interpreterF(interpreter.ReadMIAFile("/home/yosoyfr/MIA/discos/input.mia"))
 	readConsole()
 	//commands.Mount("/home/yosoyfr/MIA/discos/Disco1.dsk", "Particion1")
 	//commands.Mv("vda1", "/boot", "/f")
